@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import Container from "../ui/Container";
+import SectionTitle from "../ui/SectionTitle";
 
 function Stats() {
   const stats = [
@@ -21,13 +23,15 @@ function Stats() {
   ];
 
   return (
-    <section className="bg-slate-950 py-24 px-6">
-      <div className="max-w-6xl mx-auto">
+    <section className="bg-slate-950 py-24">
+      <Container>
+        <SectionTitle
+          title="Trusted by Legal Professionals"
+          subtitle="Our platform helps students, advocates, and professionals perform legal research faster than ever."
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
-
           {stats.map((stat, index) => (
-
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 40 }}
@@ -37,9 +41,9 @@ function Stats() {
                 delay: index * 0.15,
               }}
               viewport={{ once: true }}
-              className="text-center"
+              whileHover={{ scale: 1.05 }}
+              className="text-center bg-slate-900 rounded-2xl p-8 border border-slate-800 hover:border-cyan-400 transition-all duration-300"
             >
-
               <h2 className="text-5xl font-bold text-cyan-400">
                 {stat.number}
               </h2>
@@ -47,14 +51,10 @@ function Stats() {
               <p className="mt-4 text-slate-400">
                 {stat.label}
               </p>
-
             </motion.div>
-
           ))}
-
         </div>
-
-      </div>
+      </Container>
     </section>
   );
 }

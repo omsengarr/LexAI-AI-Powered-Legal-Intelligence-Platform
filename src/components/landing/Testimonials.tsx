@@ -1,3 +1,5 @@
+import Container from "../ui/Container";
+
 function Testimonials() {
   const testimonials = [
     {
@@ -21,22 +23,18 @@ function Testimonials() {
   ];
 
   return (
-    <section className="bg-slate-900 py-24 px-6">
-      <div className="max-w-7xl mx-auto">
-
+    <section className="bg-slate-900 py-24">
+      <Container>
         <h2 className="text-4xl font-bold text-white text-center">
           What Our Users Say
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 mt-16">
-
           {testimonials.map((item, index) => (
-
             <div
               key={index}
               className="bg-slate-800 rounded-2xl p-8"
             >
-
               <p className="text-slate-300 italic">
                 "{item.review}"
               </p>
@@ -48,14 +46,10 @@ function Testimonials() {
               <p className="text-cyan-400">
                 {item.role}
               </p>
-
             </div>
-
           ))}
-
         </div>
-
-      </div>
+      </Container>
     </section>
   );
 }

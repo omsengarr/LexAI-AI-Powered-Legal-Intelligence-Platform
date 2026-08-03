@@ -1,14 +1,14 @@
+import Container from "../ui/Container";
+
 function FAQ() {
   return (
-    <section className="bg-slate-950 py-24 px-6">
-      <div className="max-w-4xl mx-auto">
-
+    <section className="bg-slate-950 py-24">
+      <Container>
         <h2 className="text-4xl font-bold text-center text-white mb-12">
           Frequently Asked Questions
         </h2>
 
         <div className="space-y-8">
-
           <div>
             <h3 className="text-xl text-cyan-400 font-semibold">
               Is LexAI free?
@@ -38,10 +38,8 @@ function FAQ() {
               Judgments, contracts, petitions, and many other legal documents.
             </p>
           </div>
-
         </div>
-
-      </div>
+      </Container>
     </section>
   );
 }
