@@ -9,6 +9,7 @@ import UploadDocumentPage from "../pages/Documents/UploadDocumentPage";
 import ChatPage from "../pages/Chat/ChatPage";
 import CaseSearchPage from "../pages/Cases/CaseSearchPage";
 import RiskAnalysisPage from "../pages/RiskAnalysis/RiskAnalysisPage";
+import CompliancePage from "../pages/Compliance/CompliancePage";
 
 import ProfilePage from "../pages/Profile/ProfilePage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
@@ -18,38 +19,34 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
 
-        {/* Landing */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Authentication */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
-        {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
-        {/* Documents */}
         <Route
           path="/documents/upload"
           element={<UploadDocumentPage />}
         />
 
-        {/* AI Chat */}
         <Route path="/chat" element={<ChatPage />} />
 
-        {/* Case Search */}
         <Route path="/cases" element={<CaseSearchPage />} />
 
-        {/* Risk Analysis */}
         <Route
           path="/risk-analysis"
           element={<RiskAnalysisPage />}
         />
 
-        {/* Profile */}
+        <Route
+          path="/compliance"
+          element={<CompliancePage />}
+        />
+
         <Route path="/profile" element={<ProfilePage />} />
 
-        {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
 
       </Routes>

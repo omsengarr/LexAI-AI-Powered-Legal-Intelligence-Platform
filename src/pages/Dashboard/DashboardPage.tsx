@@ -1,82 +1,91 @@
-import {
-  FaFileAlt,
-  FaRobot,
-  FaBalanceScale,
-  FaShieldAlt,
-} from "react-icons/fa";
-
-import Sidebar from "../../components/dashboard/Sidebar";
-import Topbar from "../../components/dashboard/Topbar";
 import DashboardCard from "../../components/dashboard/DashboardCard";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import QuickActions from "../../components/dashboard/QuickActions";
+import AnalyticsCharts from "../../components/analytics/AnalyticsCharts";
+
+import {
+  FileText,
+  Bot,
+  Scale,
+  AlertTriangle,
+} from "lucide-react";
+
 
 function DashboardPage() {
+
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="space-y-6">
 
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-white">
+          Dashboard
+        </h1>
 
-      {/* Main Content */}
-      <div className="flex-1">
+        <p className="text-slate-400 mt-1">
+          Welcome back. Here's your legal intelligence overview.
+        </p>
+      </div>
 
-        <Topbar />
 
-        <main className="p-8">
 
-          {/* Dashboard Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-            <DashboardCard
-              title="Documents Uploaded"
-              value="124"
-              icon={<FaFileAlt />}
-              color="bg-cyan-500/20 text-cyan-400"
-            />
 
-            <DashboardCard
-              title="AI Queries"
-              value="560"
-              icon={<FaRobot />}
-              color="bg-green-500/20 text-green-400"
-            />
+        <DashboardCard
+          title="Documents"
+          value={124}
+          icon={<FileText />}
+          color="bg-cyan-500/20 text-cyan-400"
+        />
 
-            <DashboardCard
-              title="Cases Analyzed"
-              value="89"
-              icon={<FaBalanceScale />}
-              color="bg-purple-500/20 text-purple-400"
-            />
 
-            <DashboardCard
-              title="Risk Reports"
-              value="37"
-              icon={<FaShieldAlt />}
-              color="bg-red-500/20 text-red-400"
-            />
+        <DashboardCard
+          title="AI Queries"
+          value={560}
+          icon={<Bot />}
+          color="bg-purple-500/20 text-purple-400"
+        />
 
-          </div>
 
-          {/* Bottom Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <DashboardCard
+          title="Cases"
+          value={89}
+          icon={<Scale />}
+          color="bg-green-500/20 text-green-400"
+        />
 
-            <div className="xl:col-span-2">
-              <RecentActivity />
-            </div>
 
-            <div>
-              <QuickActions />
-            </div>
+        <DashboardCard
+          title="Risk Alerts"
+          value={37}
+          icon={<AlertTriangle />}
+          color="bg-red-500/20 text-red-400"
+        />
 
-          </div>
-
-        </main>
 
       </div>
+
+
+
+      {/* Recent Activity */}
+      <RecentActivity />
+
+
+
+      {/* Analytics Charts */}
+      <AnalyticsCharts />
+
+
+
+      {/* Quick Actions */}
+      <QuickActions />
+
 
     </div>
   );
 }
+
 
 export default DashboardPage;
