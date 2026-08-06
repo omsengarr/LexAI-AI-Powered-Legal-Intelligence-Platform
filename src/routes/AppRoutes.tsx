@@ -7,6 +7,7 @@ import SignupPage from "../pages/Auth/SignupPage";
 import DashboardPage from "../pages/Dashboard/DashboardPage";
 import UploadDocumentPage from "../pages/Documents/UploadDocumentPage";
 import ChatPage from "../pages/Chat/ChatPage";
+import CaseSearchPage from "../pages/Cases/CaseSearchPage";
 
 import ProfilePage from "../pages/Profile/ProfilePage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
@@ -15,7 +16,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page */}
+        {/* Landing */}
         <Route path="/" element={<LandingPage />} />
 
         {/* Authentication */}
@@ -33,6 +34,9 @@ function AppRoutes() {
 
         {/* AI Chat */}
         <Route path="/chat" element={<ChatPage />} />
+
+        {/* Case Search */}
+        <Route path="/cases" element={<CaseSearchPage />} />
 
         {/* Profile */}
         <Route path="/profile" element={<ProfilePage />} />
