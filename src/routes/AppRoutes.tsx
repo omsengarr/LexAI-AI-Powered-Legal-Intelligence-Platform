@@ -14,42 +14,143 @@ import CompliancePage from "../pages/Compliance/CompliancePage";
 import ProfilePage from "../pages/Profile/ProfilePage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
+import AppLayout from "../components/AppLayout";
+
 function AppRoutes() {
   return (
     <BrowserRouter>
+
       <Routes>
 
-        <Route path="/" element={<LandingPage />} />
+        {/* ============================== */}
+        {/* Public Pages */}
+        {/* ============================== */}
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
 
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/signup"
+          element={<SignupPage />}
+        />
+
+
+        {/* ============================== */}
+        {/* Dashboard */}
+        {/* ============================== */}
+
+        <Route
+          path="/dashboard"
+          element={
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
+          }
+        />
+
+
+        {/* ============================== */}
+        {/* Documents */}
+        {/* ============================== */}
 
         <Route
           path="/documents/upload"
-          element={<UploadDocumentPage />}
+          element={
+            <AppLayout>
+              <UploadDocumentPage />
+            </AppLayout>
+          }
         />
 
-        <Route path="/chat" element={<ChatPage />} />
 
-        <Route path="/cases" element={<CaseSearchPage />} />
+        {/* ============================== */}
+        {/* AI Chat */}
+        {/* ============================== */}
+
+        <Route
+          path="/chat"
+          element={
+            <AppLayout>
+              <ChatPage />
+            </AppLayout>
+          }
+        />
+
+
+        {/* ============================== */}
+        {/* Case Search */}
+        {/* ============================== */}
+
+        <Route
+          path="/cases"
+          element={
+            <AppLayout>
+              <CaseSearchPage />
+            </AppLayout>
+          }
+        />
+
+
+        {/* ============================== */}
+        {/* Risk Analysis */}
+        {/* ============================== */}
 
         <Route
           path="/risk-analysis"
-          element={<RiskAnalysisPage />}
+          element={
+            <AppLayout>
+              <RiskAnalysisPage />
+            </AppLayout>
+          }
         />
+
+
+        {/* ============================== */}
+        {/* Compliance */}
+        {/* ============================== */}
 
         <Route
           path="/compliance"
-          element={<CompliancePage />}
+          element={
+            <AppLayout>
+              <CompliancePage />
+            </AppLayout>
+          }
         />
 
-        <Route path="/profile" element={<ProfilePage />} />
 
-        <Route path="*" element={<NotFoundPage />} />
+        {/* ============================== */}
+        {/* Profile */}
+        {/* ============================== */}
+
+        <Route
+          path="/profile"
+          element={
+            <AppLayout>
+              <ProfilePage />
+            </AppLayout>
+          }
+        />
+
+
+        {/* ============================== */}
+        {/* Not Found */}
+        {/* ============================== */}
+
+        <Route
+          path="*"
+          element={<NotFoundPage />}
+        />
 
       </Routes>
+
     </BrowserRouter>
   );
 }

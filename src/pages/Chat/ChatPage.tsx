@@ -1,8 +1,5 @@
 import { useState } from "react";
 
-import Sidebar from "../../components/dashboard/Sidebar";
-import Topbar from "../../components/dashboard/Topbar";
-
 import ChatMessage from "../../components/chat/ChatMessage";
 import ChatInput from "../../components/chat/ChatInput";
 
@@ -34,30 +31,26 @@ function ChatPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
-      <Sidebar />
+    <div className="flex flex-col min-h-full">
+      {/* Page Content */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        <h1 className="text-3xl font-bold text-white mb-8">
+          AI Legal Assistant
+        </h1>
 
-      <div className="flex-1 flex flex-col">
-        <Topbar />
-
-        <div className="flex-1 p-8 overflow-y-auto">
-          <h1 className="text-3xl font-bold text-white mb-8">
-            AI Legal Assistant
-          </h1>
-
-          <div className="space-y-6">
-            {messages.map((message, index) => (
-              <ChatMessage
-                key={index}
-                message={message.text}
-                sender={message.sender}
-              />
-            ))}
-          </div>
+        <div className="space-y-6">
+          {messages.map((message, index) => (
+            <ChatMessage
+              key={index}
+              message={message.text}
+              sender={message.sender}
+            />
+          ))}
         </div>
+      </main>
 
-        <ChatInput onSend={handleSend} />
-      </div>
+      {/* Chat Input */}
+      <ChatInput onSend={handleSend} />
     </div>
   );
 }
