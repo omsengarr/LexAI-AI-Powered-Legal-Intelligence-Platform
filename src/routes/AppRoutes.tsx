@@ -6,6 +6,8 @@ import SignupPage from "../pages/Auth/SignupPage";
 
 import DashboardPage from "../pages/Dashboard/DashboardPage";
 import UploadDocumentPage from "../pages/Documents/UploadDocumentPage";
+import DocumentList from "../pages/Documents/DocumentList";
+
 import ChatPage from "../pages/Chat/ChatPage";
 import CaseSearchPage from "../pages/Cases/CaseSearchPage";
 import RiskAnalysisPage from "../pages/RiskAnalysis/RiskAnalysisPage";
@@ -19,7 +21,6 @@ import AppLayout from "../components/AppLayout";
 function AppRoutes() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         {/* ============================== */}
@@ -59,6 +60,15 @@ function AppRoutes() {
         {/* ============================== */}
         {/* Documents */}
         {/* ============================== */}
+
+        <Route
+          path="/documents"
+          element={
+            <AppLayout>
+              <DocumentList />
+            </AppLayout>
+          }
+        />
 
         <Route
           path="/documents/upload"
@@ -150,7 +160,6 @@ function AppRoutes() {
         />
 
       </Routes>
-
     </BrowserRouter>
   );
 }

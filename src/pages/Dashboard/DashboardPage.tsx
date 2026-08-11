@@ -1,7 +1,11 @@
+import { useEffect } from "react";
+
 import DashboardCard from "../../components/dashboard/DashboardCard";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import QuickActions from "../../components/dashboard/QuickActions";
 import AnalyticsCharts from "../../components/analytics/AnalyticsCharts";
+
+import { healthCheck } from "../../services/api";
 
 import {
   FileText,
@@ -10,12 +14,19 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-
 function DashboardPage() {
+  useEffect(() => {
+    healthCheck()
+      .then((data) => {
+        console.log("Backend connected:", data);
+      })
+      .catch((error) => {
+        console.error("Backend connection failed:", error);
+      });
+  }, []);
 
   return (
-    <div className="space-y-6">
-
+    <>
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-white">
@@ -27,11 +38,8 @@ function DashboardPage() {
         </p>
       </div>
 
-
-
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
 
         <DashboardCard
           title="Documents"
@@ -40,14 +48,12 @@ function DashboardPage() {
           color="bg-cyan-500/20 text-cyan-400"
         />
 
-
         <DashboardCard
           title="AI Queries"
           value={560}
           icon={<Bot />}
           color="bg-purple-500/20 text-purple-400"
         />
-
 
         <DashboardCard
           title="Cases"
@@ -56,7 +62,6 @@ function DashboardPage() {
           color="bg-green-500/20 text-green-400"
         />
 
-
         <DashboardCard
           title="Risk Alerts"
           value={37}
@@ -64,28 +69,18 @@ function DashboardPage() {
           color="bg-red-500/20 text-red-400"
         />
 
-
       </div>
-
-
 
       {/* Recent Activity */}
       <RecentActivity />
 
-
-
       {/* Analytics Charts */}
       <AnalyticsCharts />
 
-
-
       {/* Quick Actions */}
       <QuickActions />
-
-
-    </div>
+    </>
   );
 }
-
 
 export default DashboardPage;
