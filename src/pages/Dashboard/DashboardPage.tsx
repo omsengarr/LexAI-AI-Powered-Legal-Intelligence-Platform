@@ -1,11 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import DashboardCard from "../../components/dashboard/DashboardCard";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import QuickActions from "../../components/dashboard/QuickActions";
 import AnalyticsCharts from "../../components/analytics/AnalyticsCharts";
 
-import { healthCheck } from "../../services/api";
+import {
+  healthCheck,
+  getDocumentCount,
+} from "../../services/api";
 
 import {
   FileText,
@@ -15,7 +18,10 @@ import {
 } from "lucide-react";
 
 function DashboardPage() {
+  const [documentCount, setDocumentCount] = useState(0);
+
   useEffect(() => {
+    // Check backend connection
     healthCheck()
       .then((data) => {
         console.log("Backend connected:", data);
@@ -23,13 +29,23 @@ function DashboardPage() {
       .catch((error) => {
         console.error("Backend connection failed:", error);
       });
+
+    // Get document count from PostgreSQL
+    getDocumentCount()
+      .then((data) => {
+        console.log("Document count:", data);
+        setDocumentCount(data.count);
+      })
+      .catch((error) => {
+        console.error("Failed to get document count:", error);
+      });
   }, []);
 
   return (
     <>
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-white">
           Dashboard
         </h1>
 
@@ -43,7 +59,7 @@ function DashboardPage() {
 
         <DashboardCard
           title="Documents"
-          value={124}
+          value={documentCount}
           icon={<FileText />}
           color="bg-cyan-500/20 text-cyan-400"
         />

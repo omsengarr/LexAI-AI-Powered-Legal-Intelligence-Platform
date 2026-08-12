@@ -34,24 +34,27 @@ function DocumentList() {
     }
   }
 
+  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10 text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
         Loading documents...
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-4 rounded-lg bg-red-500/10 text-red-400">
-        <AlertCircle className="w-5 h-5" />
+      <div className="flex items-center justify-center py-10 text-red-400">
+        <AlertCircle className="w-5 h-5 mr-2" />
         {error}
       </div>
     );
   }
 
+  // Empty state
   if (documents.length === 0) {
     return (
       <div className="text-center py-10 text-slate-400">
@@ -60,16 +63,17 @@ function DocumentList() {
     );
   }
 
+  // Documents list
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {documents.map((document) => (
         <div
           key={document.id}
-          className="flex items-center justify-between p-4 rounded-xl bg-slate-800/60 border border-slate-700"
+          className="flex items-center justify-between p-4 rounded-lg border border-slate-700 bg-slate-800/50"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-cyan-500/10">
-              <FileText className="w-6 h-6 text-cyan-400" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-500/20">
+              <FileText className="w-5 h-5 text-cyan-400" />
             </div>
 
             <div>
