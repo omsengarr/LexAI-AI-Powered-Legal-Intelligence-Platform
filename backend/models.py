@@ -1,13 +1,59 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from datetime import datetime
 
 from database import Base
 
 
+# ========================================
+# Document Model
+# ========================================
+
 class Document(Base):
+
     __tablename__ = "documents"
 
-    id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String, nullable=False)
-    content_type = Column(String, nullable=True)
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    filename = Column(
+        String,
+        nullable=False
+    )
+
+    content_type = Column(
+        String,
+        nullable=True
+    )
+
+    uploaded_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+
+# ========================================
+# AI Query Model
+# ========================================
+
+class AIQuery(Base):
+
+    __tablename__ = "ai_queries"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    query = Column(
+        Text,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )

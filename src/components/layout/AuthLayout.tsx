@@ -12,19 +12,7 @@ function AuthLayout({
   subtitle,
 }: AuthLayoutProps) {
   return (
-    <div
-      className="
-        min-h-screen
-        bg-slate-950
-        flex
-        items-center
-        justify-center
-        px-4
-        py-10
-        relative
-        overflow-hidden
-      "
-    >
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-10">
 
       {/* ========================================
           Background Decoration
@@ -32,11 +20,11 @@ function AuthLayout({
 
       <div
         className="
-          absolute
+          fixed
           -top-32
           -left-32
-          h-96
-          w-96
+          h-80
+          w-80
           rounded-full
           bg-cyan-500/10
           blur-3xl
@@ -46,11 +34,11 @@ function AuthLayout({
 
       <div
         className="
-          absolute
+          fixed
           -bottom-32
           -right-32
-          h-96
-          w-96
+          h-80
+          w-80
           rounded-full
           bg-purple-500/10
           blur-3xl
@@ -60,7 +48,7 @@ function AuthLayout({
 
 
       {/* ========================================
-          Main Auth Container
+          Authentication Card
       ======================================== */}
 
       <div
@@ -72,25 +60,21 @@ function AuthLayout({
         "
       >
 
-        {/* ======================================
-            Auth Card
-        ====================================== */}
-
         <div
           className="
             rounded-2xl
             border
             border-slate-800
             bg-slate-900
-            p-6
             shadow-2xl
+            p-6
             sm:p-8
           "
         >
 
-          {/* ====================================
+          {/* ========================================
               Logo
-          ==================================== */}
+          ======================================== */}
 
           <div className="flex justify-center mb-6">
 
@@ -101,10 +85,10 @@ function AuthLayout({
                 w-14
                 items-center
                 justify-center
-                rounded-xl
+                rounded-2xl
                 bg-cyan-500
                 text-white
-                text-2xl
+                text-xl
                 font-bold
                 shadow-lg
                 shadow-cyan-500/20
@@ -116,9 +100,9 @@ function AuthLayout({
           </div>
 
 
-          {/* ====================================
+          {/* ========================================
               Title
-          ==================================== */}
+          ======================================== */}
 
           <div className="text-center mb-8">
 
@@ -127,13 +111,11 @@ function AuthLayout({
                 text-2xl
                 sm:text-3xl
                 font-bold
-                tracking-tight
                 text-white
               "
             >
               {title}
             </h1>
-
 
             <p
               className="
@@ -148,27 +130,20 @@ function AuthLayout({
           </div>
 
 
-          {/* ====================================
-              Form Content
-          ==================================== */}
+          {/* ========================================
+              Page Content
+          ======================================== */}
 
           {children}
 
         </div>
 
 
-        {/* ====================================
+        {/* ========================================
             Footer
-        ==================================== */}
+        ======================================== */}
 
-        <p
-          className="
-            mt-6
-            text-center
-            text-xs
-            text-slate-600
-          "
-        >
+        <p className="mt-6 text-center text-xs text-slate-600">
           LexAI • AI-Powered Legal Intelligence Platform
         </p>
 

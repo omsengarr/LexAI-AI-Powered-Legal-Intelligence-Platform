@@ -1,11 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, Depends
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pathlib import Path
+from pydantic import BaseModel
 import shutil
 
 from database import SessionLocal
-from models import Document
+from models import Document, AIQuery
 
 
 app = FastAPI(
@@ -57,6 +58,14 @@ def get_db():
 
 
 # ========================================
+# AI Query Request Model
+# ========================================
+
+class AIQueryRequest(BaseModel):
+    query: str
+
+
+# ========================================
 # Root Endpoint
 # ========================================
 
@@ -88,11 +97,21 @@ async def upload_document(
     db: Session = Depends(get_db)
 ):
 
+    # Check that a filename exists
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="No file selected"
+        )
+
     # Save the actual file
     file_path = UPLOAD_DIR / file.filename
 
     with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        shutil.copyfileobj(
+            file.file,
+            buffer
+        )
 
     # Save document information in PostgreSQL
     document = Document(
@@ -128,6 +147,7 @@ def get_documents(
 
     return documents
 
+
 # ========================================
 # Get Document Count
 # ========================================
@@ -141,4 +161,97 @@ def get_document_count(
 
     return {
         "count": count
+    }
+
+
+# ========================================
+# Delete Document
+# ========================================
+
+@app.delete("/documents/{document_id}")
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+
+    # Find document in PostgreSQL
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    # Document does not exist
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # Get filename before deleting database record
+    filename = document.filename
+
+    # Delete the physical file
+    file_path = UPLOAD_DIR / filename
+
+    if file_path.exists():
+        file_path.unlink()
+
+    # Delete database record
+    db.delete(document)
+    db.commit()
+
+    return {
+        "message": "Document deleted successfully",
+        "document_id": document_id,
+        "filename": filename
+    }
+
+
+# ========================================
+# Get AI Query Count
+# ========================================
+
+@app.get("/queries/count")
+def get_ai_query_count(
+    db: Session = Depends(get_db)
+):
+
+    count = db.query(AIQuery).count()
+
+    return {
+        "count": count
+    }
+
+
+# ========================================
+# Save AI Query
+# ========================================
+
+@app.post("/queries")
+def save_ai_query(
+    query_data: AIQueryRequest,
+    db: Session = Depends(get_db)
+):
+
+    # Check that query is not empty
+    if not query_data.query.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Query cannot be empty"
+        )
+
+    # Create new AI query record
+    ai_query = AIQuery(
+        query=query_data.query.strip()
+    )
+
+    # Save to PostgreSQL
+    db.add(ai_query)
+    db.commit()
+    db.refresh(ai_query)
+
+    return {
+        "message": "AI query saved successfully",
+        "query": ai_query.query,
+        "query_id": ai_query.id,
+        "created_at": ai_query.created_at
     }

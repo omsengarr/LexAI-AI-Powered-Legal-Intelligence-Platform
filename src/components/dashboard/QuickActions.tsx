@@ -5,12 +5,19 @@ function QuickActions() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
-      <h2 className="text-2xl font-bold text-white mb-6">
-        Quick Actions
-      </h2>
+    <div
+      className="
+        bg-slate-900
+        rounded-2xl
+        border
+        border-slate-800
+        p-5
+        sm:p-6
+      "
+    >
 
-      <div className="space-y-4">
+      <div className="space-y-3">
+
         <Button
           className="w-full"
           onClick={() => navigate("/documents/upload")}
@@ -33,7 +40,9 @@ function QuickActions() {
         >
           Search Cases
         </Button>
+
       </div>
+
     </div>
   );
 }

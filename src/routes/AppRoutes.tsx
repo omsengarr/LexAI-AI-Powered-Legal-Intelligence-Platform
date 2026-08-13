@@ -17,15 +17,16 @@ import ProfilePage from "../pages/Profile/ProfilePage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
 import AppLayout from "../components/AppLayout";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* ============================== */}
-        {/* Public Pages */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PUBLIC PAGES */}
+        {/* ======================================== */}
 
         <Route
           path="/"
@@ -43,116 +44,132 @@ function AppRoutes() {
         />
 
 
-        {/* ============================== */}
-        {/* Dashboard */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED DASHBOARD */}
+        {/* ======================================== */}
 
         <Route
           path="/dashboard"
           element={
-            <AppLayout>
-              <DashboardPage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <DashboardPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Documents */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED DOCUMENTS */}
+        {/* ======================================== */}
 
         <Route
           path="/documents"
           element={
-            <AppLayout>
-              <DocumentList />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <DocumentList />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/documents/upload"
           element={
-            <AppLayout>
-              <UploadDocumentPage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <UploadDocumentPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* AI Chat */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED AI CHAT */}
+        {/* ======================================== */}
 
         <Route
           path="/chat"
           element={
-            <AppLayout>
-              <ChatPage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <ChatPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Case Search */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED CASE SEARCH */}
+        {/* ======================================== */}
 
         <Route
           path="/cases"
           element={
-            <AppLayout>
-              <CaseSearchPage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <CaseSearchPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Risk Analysis */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED RISK ANALYSIS */}
+        {/* ======================================== */}
 
         <Route
           path="/risk-analysis"
           element={
-            <AppLayout>
-              <RiskAnalysisPage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <RiskAnalysisPage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Compliance */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED COMPLIANCE */}
+        {/* ======================================== */}
 
         <Route
           path="/compliance"
           element={
-            <AppLayout>
-              <CompliancePage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <CompliancePage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Profile */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* PROTECTED PROFILE */}
+        {/* ======================================== */}
 
         <Route
           path="/profile"
           element={
-            <AppLayout>
-              <ProfilePage />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <ProfilePage />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
 
-        {/* ============================== */}
-        {/* Not Found */}
-        {/* ============================== */}
+        {/* ======================================== */}
+        {/* NOT FOUND */}
+        {/* ======================================== */}
 
         <Route
           path="*"

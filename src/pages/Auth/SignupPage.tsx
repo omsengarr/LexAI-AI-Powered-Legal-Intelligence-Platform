@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+
 import AuthLayout from "../../layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
@@ -9,7 +10,10 @@ function SignupPage() {
       title="Create Your Account"
       subtitle="Join LexAI and start smarter legal research."
     >
+
       <form className="space-y-5">
+
+        {/* Full Name */}
 
         <Input
           label="Full Name"
@@ -18,12 +22,18 @@ function SignupPage() {
           required
         />
 
+
+        {/* Email */}
+
         <Input
           label="Email Address"
           type="email"
           placeholder="Enter your email"
           required
         />
+
+
+        {/* Password */}
 
         <Input
           label="Password"
@@ -32,6 +42,9 @@ function SignupPage() {
           required
         />
 
+
+        {/* Confirm Password */}
+
         <Input
           label="Confirm Password"
           type="password"
@@ -39,7 +52,11 @@ function SignupPage() {
           required
         />
 
+
+        {/* Terms */}
+
         <div className="flex items-start gap-3">
+
           <input
             type="checkbox"
             required
@@ -47,12 +64,25 @@ function SignupPage() {
           />
 
           <label className="text-sm text-slate-400">
+
             I agree to the{" "}
-            <span className="text-cyan-400 cursor-pointer hover:underline">
+
+            <span
+              className="
+                text-cyan-400
+                cursor-pointer
+                hover:underline
+              "
+            >
               Terms & Conditions
             </span>
+
           </label>
+
         </div>
+
+
+        {/* Create Account */}
 
         <Button
           variant="primary"
@@ -62,17 +92,27 @@ function SignupPage() {
           Create Account
         </Button>
 
+
+        {/* Login */}
+
         <p className="text-center text-slate-400">
+
           Already have an account?{" "}
+
           <Link
             to="/login"
-            className="text-cyan-400 hover:underline"
+            className="
+              text-cyan-400
+              hover:underline
+            "
           >
             Login
           </Link>
+
         </p>
 
       </form>
+
     </AuthLayout>
   );
 }

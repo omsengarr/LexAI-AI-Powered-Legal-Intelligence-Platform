@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   Bell,
@@ -14,7 +15,6 @@ import {
   X,
 } from "lucide-react";
 
-
 // ==========================================
 // SEARCH DATA
 // ==========================================
@@ -25,55 +25,46 @@ const searchItems = [
     type: "Document",
     category: "Contract",
   },
-
   {
     title: "Property Dispute Case",
     type: "Case",
     category: "Civil Law",
   },
-
   {
     title: "Non-Disclosure Agreement",
     type: "Document",
     category: "Contract",
   },
-
   {
     title: "Intellectual Property Rights",
     type: "Case",
     category: "IP Law",
   },
-
   {
     title: "Privacy Policy Compliance",
     type: "Document",
     category: "Compliance",
   },
-
   {
     title: "Consumer Protection Act",
     type: "Case",
     category: "Consumer Law",
   },
-
   {
     title: "Contract Risk Assessment",
     type: "Document",
     category: "Risk Analysis",
   },
-
   {
     title: "High Risk Legal Clause",
     type: "Document",
     category: "Risk Analysis",
   },
-
   {
     title: "Corporate Compliance Risk Report",
     type: "Report",
     category: "Risk Analysis",
   },
-
   {
     title: "Legal Risk Analysis Case",
     type: "Case",
@@ -81,12 +72,13 @@ const searchItems = [
   },
 ];
 
-
 // ==========================================
 // TOPBAR
 // ==========================================
 
 function Topbar() {
+  const navigate = useNavigate();
+
   const [notificationOpen, setNotificationOpen] =
     useState(false);
 
@@ -96,6 +88,28 @@ function Topbar() {
   const [searchQuery, setSearchQuery] =
     useState("");
 
+  // ==========================================
+  // GET USER EMAIL
+  // ==========================================
+
+  const userEmail =
+    localStorage.getItem("lexai_user_email") ||
+    "Legal AI User";
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+
+  function handleLogout() {
+    localStorage.removeItem("lexai_authenticated");
+    localStorage.removeItem("lexai_user_email");
+
+    setProfileOpen(false);
+
+    navigate("/login", {
+      replace: true,
+    });
+  }
 
   // ==========================================
   // SEARCH FILTER
@@ -109,7 +123,6 @@ function Topbar() {
             .toLowerCase()
             .includes(searchQuery.toLowerCase())
         );
-
 
   return (
     <div
@@ -137,10 +150,7 @@ function Topbar() {
           max-w-xl
         "
       >
-
         <div className="relative">
-
-          {/* Search Icon */}
 
           <Search
             size={19}
@@ -152,9 +162,6 @@ function Topbar() {
               text-slate-500
             "
           />
-
-
-          {/* Search Input */}
 
           <input
             type="text"
@@ -180,11 +187,9 @@ function Topbar() {
             "
           />
 
-
-          {/* Clear Search Button */}
-
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery("")}
               className="
                 absolute
@@ -202,7 +207,6 @@ function Topbar() {
           )}
 
         </div>
-
 
         {/* ====================================== */}
         {/* SEARCH RESULTS */}
@@ -227,9 +231,6 @@ function Topbar() {
 
             {filteredResults.length > 0 ? (
               <>
-
-                {/* Results Heading */}
-
                 <div
                   className="
                     px-3
@@ -243,15 +244,12 @@ function Topbar() {
                   Search Results
                 </div>
 
-
-                {/* Results List */}
-
                 <div className="space-y-1">
 
                   {filteredResults.map(
                     (item, index) => (
-
                       <button
+                        type="button"
                         key={index}
                         className="
                           w-full
@@ -267,8 +265,6 @@ function Topbar() {
                         "
                       >
 
-                        {/* Result Icon */}
-
                         <div
                           className="
                             w-9
@@ -282,18 +278,13 @@ function Topbar() {
                             shrink-0
                           "
                         >
-
                           {item.type === "Document" ||
                           item.type === "Report" ? (
                             <FileText size={18} />
                           ) : (
                             <Scale size={18} />
                           )}
-
                         </div>
-
-
-                        {/* Result Information */}
 
                         <div className="flex-1">
 
@@ -320,19 +311,12 @@ function Topbar() {
                         </div>
 
                       </button>
-
                     )
                   )}
 
                 </div>
-
               </>
             ) : (
-
-              /* ================================= */
-              /* NO RESULTS */
-              /* ================================= */
-
               <div
                 className="
                   px-4
@@ -370,14 +354,12 @@ function Topbar() {
                 </p>
 
               </div>
-
             )}
 
           </div>
         )}
 
       </div>
-
 
       {/* ====================================== */}
       {/* RIGHT SECTION */}
@@ -391,7 +373,6 @@ function Topbar() {
         "
       >
 
-
         {/* ====================================== */}
         {/* NOTIFICATIONS */}
         {/* ====================================== */}
@@ -399,6 +380,7 @@ function Topbar() {
         <div className="relative">
 
           <button
+            type="button"
             onClick={() =>
               setNotificationOpen(
                 !notificationOpen
@@ -414,9 +396,6 @@ function Topbar() {
           >
 
             <Bell size={24} />
-
-
-            {/* Notification Count */}
 
             <span
               className="
@@ -439,10 +418,7 @@ function Topbar() {
 
           </button>
 
-
-          {/* ================================= */}
-          {/* NOTIFICATION DROPDOWN */}
-          {/* ================================= */}
+          {/* Notification Dropdown */}
 
           {notificationOpen && (
             <div
@@ -460,8 +436,6 @@ function Topbar() {
                 z-50
               "
             >
-
-              {/* Header */}
 
               <div
                 className="
@@ -492,9 +466,6 @@ function Topbar() {
 
               </div>
 
-
-              {/* Notification 1 */}
-
               <div
                 className="
                   bg-slate-800
@@ -505,7 +476,6 @@ function Topbar() {
                   cursor-pointer
                 "
               >
-
                 <p
                   className="
                     text-white
@@ -526,11 +496,7 @@ function Topbar() {
                   Your uploaded document has
                   been analyzed.
                 </p>
-
               </div>
-
-
-              {/* Notification 2 */}
 
               <div
                 className="
@@ -543,7 +509,6 @@ function Topbar() {
                   mt-3
                 "
               >
-
                 <p
                   className="
                     text-white
@@ -563,11 +528,7 @@ function Topbar() {
                 >
                   Risk detected in Case #1024.
                 </p>
-
               </div>
-
-
-              {/* Notification 3 */}
 
               <div
                 className="
@@ -580,7 +541,6 @@ function Topbar() {
                   mt-3
                 "
               >
-
                 <p
                   className="
                     text-white
@@ -601,13 +561,10 @@ function Topbar() {
                   Your legal intelligence report
                   is ready.
                 </p>
-
               </div>
 
-
-              {/* View All */}
-
               <button
+                type="button"
                 className="
                   w-full
                   mt-4
@@ -625,7 +582,6 @@ function Topbar() {
 
         </div>
 
-
         {/* ====================================== */}
         {/* PROFILE */}
         {/* ====================================== */}
@@ -633,6 +589,7 @@ function Topbar() {
         <div className="relative">
 
           <button
+            type="button"
             onClick={() =>
               setProfileOpen(!profileOpen)
             }
@@ -649,8 +606,6 @@ function Topbar() {
             "
           >
 
-            {/* Avatar */}
-
             <div
               className="
                 bg-cyan-500/20
@@ -661,9 +616,6 @@ function Topbar() {
             >
               <User size={22} />
             </div>
-
-
-            {/* User Information */}
 
             <div className="text-left">
 
@@ -681,15 +633,14 @@ function Topbar() {
                 className="
                   text-slate-400
                   text-xs
+                  truncate
+                  max-w-[180px]
                 "
               >
-                Legal AI User
+                {userEmail}
               </p>
 
             </div>
-
-
-            {/* Arrow */}
 
             <ChevronDown
               size={18}
@@ -697,7 +648,6 @@ function Topbar() {
             />
 
           </button>
-
 
           {/* ================================= */}
           {/* PROFILE DROPDOWN */}
@@ -746,17 +696,19 @@ function Topbar() {
                     text-slate-400
                     text-xs
                     mt-1
+                    truncate
                   "
                 >
-                  Legal AI User
+                  {userEmail}
                 </p>
 
               </div>
 
-
               {/* My Profile */}
 
               <button
+                type="button"
+                onClick={() => navigate("/profile")}
                 className="
                   w-full
                   flex
@@ -781,10 +733,10 @@ function Topbar() {
 
               </button>
 
-
               {/* Settings */}
 
               <button
+                type="button"
                 className="
                   w-full
                   flex
@@ -809,10 +761,10 @@ function Topbar() {
 
               </button>
 
-
               {/* Security */}
 
               <button
+                type="button"
                 className="
                   w-full
                   flex
@@ -837,7 +789,6 @@ function Topbar() {
 
               </button>
 
-
               {/* Divider */}
 
               <div
@@ -848,10 +799,11 @@ function Topbar() {
                 "
               />
 
-
               {/* Logout */}
 
               <button
+                type="button"
+                onClick={handleLogout}
                 className="
                   w-full
                   flex
@@ -886,6 +838,5 @@ function Topbar() {
     </div>
   );
 }
-
 
 export default Topbar;

@@ -1,459 +1,655 @@
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { UploadCloud, FileText, X } from "lucide-react";
-import { uploadDocument } from "../../services/api";
+import {
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Upload,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+} from "lucide-react";
+
+import DocumentList from "./DocumentList";
+
+import {
+  uploadDocument,
+} from "../../services/api";
+
 
 function UploadDocumentPage() {
-  const navigate = useNavigate();
-
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState("");
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ========================================
-  // Handle Selected File
+  // State
   // ========================================
 
-  const handleFile = (file: File) => {
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "text/plain",
-    ];
+  const [selectedFile, setSelectedFile] =
+    useState<File | null>(null);
 
-    if (!allowedTypes.includes(file.type)) {
-      alert("Please upload a PDF, DOCX, or TXT file.");
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [refreshKey, setRefreshKey] =
+    useState(0);
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
+
+
+  // ========================================
+  // File Selection
+  // ========================================
+
+  function handleFileChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+
+    const file =
+      event.target.files?.[0];
+
+    if (!file) {
       return;
     }
 
     setSelectedFile(file);
-    setUploadMessage("");
-  };
+    setSuccessMessage("");
+    setErrorMessage("");
+  }
+
 
   // ========================================
-  // File Input Change
+  // Upload File
   // ========================================
 
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
+  async function handleUpload() {
 
-    if (file) {
-      handleFile(file);
-    }
-  };
-
-  // ========================================
-  // Drag & Drop
-  // ========================================
-
-  const handleDrop = (
-    event: React.DragEvent<HTMLDivElement>
-  ) => {
-    event.preventDefault();
-
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-
-    if (file) {
-      handleFile(file);
-    }
-  };
-
-  // ========================================
-  // Remove File
-  // ========================================
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    setUploadMessage("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  // ========================================
-  // Upload Document to FastAPI
-  // ========================================
-
-  const handleUpload = async () => {
     if (!selectedFile) {
-      alert("Please select a document first.");
+
+      setErrorMessage(
+        "Please select a document first."
+      );
+
       return;
     }
 
     try {
-      setIsUploading(true);
-      setUploadMessage("");
 
-      const result = await uploadDocument(selectedFile);
+      setUploading(true);
 
-      console.log("Upload response:", result);
+      setSuccessMessage("");
+      setErrorMessage("");
 
-      setUploadMessage(
-        `Successfully uploaded: ${result.filename}`
+      const result =
+        await uploadDocument(selectedFile);
+
+      console.log(
+        "Upload successful:",
+        result
       );
 
-      // Navigate to Documents page after successful upload
-      setTimeout(() => {
-        navigate("/documents");
-      }, 1000);
+      setSuccessMessage(
+        `${selectedFile.name} uploaded successfully.`
+      );
+
+      setSelectedFile(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      setRefreshKey(
+        (previous) => previous + 1
+      );
 
     } catch (error) {
-      console.error("Upload error:", error);
 
-      setUploadMessage(
-        "Upload failed. Please make sure the backend is running."
+      console.error(
+        "Upload failed:",
+        error
       );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload document."
+      );
+
     } finally {
-      setIsUploading(false);
+
+      setUploading(false);
+
     }
-  };
+  }
+
+
+  // ========================================
+  // Page
+  // ========================================
 
   return (
-    <main className="p-8 space-y-8">
 
-      {/* ============================== */}
+    <div className="w-full space-y-8">
+
+
+      {/* ================================== */}
       {/* Page Header */}
-      {/* ============================== */}
+      {/* ================================== */}
 
-      <div>
-        <h1 className="text-3xl font-bold text-white">
-          Upload Legal Document
-        </h1>
-
-        <p className="text-slate-400 mt-2">
-          Upload contracts, agreements, judgments or other
-          legal documents for AI-powered analysis.
-        </p>
-      </div>
-
-      {/* ============================== */}
-      {/* Upload Area */}
-      {/* ============================== */}
-
-      <div
-        onDragOver={(event) => {
-          event.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => {
-          setIsDragging(false);
-        }}
-        onDrop={handleDrop}
-        className={`
-          min-h-[330px]
+      <section
+        className="
           rounded-2xl
-          border-2
-          border-dashed
-          flex
-          flex-col
-          items-center
-          justify-center
-          text-center
-          transition-all
-          duration-300
-          ${
-            isDragging
-              ? "border-cyan-400 bg-cyan-500/10"
-              : "border-slate-700 bg-slate-900"
-          }
-        `}
-      >
-
-        {/* Upload Icon */}
-
-        <div
-          className="
-            w-16
-            h-16
-            rounded-full
-            bg-cyan-500/10
-            flex
-            items-center
-            justify-center
-            mb-5
-          "
-        >
-          <UploadCloud
-            size={42}
-            className="text-cyan-400"
-          />
-        </div>
-
-        {/* Title */}
-
-        <h2 className="
-          text-2xl
-          font-bold
-          text-white
-        ">
-          Drag & Drop Your Legal Document
-        </h2>
-
-        {/* Description */}
-
-        <p className="
-          text-slate-400
-          mt-3
-        ">
-          Supports PDF, DOCX and TXT files
-        </p>
-
-        {/* Browse Button */}
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="
-            mt-7
-            px-7
-            py-3
-            rounded-xl
-            bg-cyan-500
-            hover:bg-cyan-400
-            text-white
-            font-semibold
-            transition-all
-            duration-200
-            shadow-lg
-            hover:shadow-cyan-500/20
-          "
-        >
-          Browse Files
-        </button>
-
-        {/* Hidden File Input */}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.docx,.txt"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
-      </div>
-
-      {/* ============================== */}
-      {/* Selected File */}
-      {/* ============================== */}
-
-      {selectedFile && (
-        <div className="
-          bg-slate-900
           border
           border-slate-800
-          rounded-2xl
-          p-5
-        ">
+          bg-gradient-to-br
+          from-slate-900
+          via-slate-900
+          to-cyan-950/30
+          p-6
+          md:p-8
+        "
+      >
 
-          <div className="
-            flex
-            items-center
-            justify-between
-            gap-4
-          ">
+        <div className="flex items-center gap-4">
 
-            <div className="
+          <div
+            className="
               flex
+              h-12
+              w-12
+              shrink-0
               items-center
-              gap-4
-            ">
+              justify-center
+              rounded-xl
+              border
+              border-cyan-500/20
+              bg-cyan-500/10
+              text-cyan-400
+            "
+          >
+            <Upload size={24} />
+          </div>
 
-              {/* File Icon */}
+          <div>
 
-              <div className="
-                w-12
-                h-12
-                rounded-xl
-                bg-cyan-500/10
-                flex
-                items-center
-                justify-center
-              ">
-                <FileText
-                  size={24}
-                  className="text-cyan-400"
-                />
-              </div>
-
-              {/* File Information */}
-
-              <div>
-
-                <p className="
-                  text-white
-                  font-semibold
-                  break-all
-                ">
-                  {selectedFile.name}
-                </p>
-
-                <p className="
-                  text-slate-400
-                  text-sm
-                  mt-1
-                ">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-
-              </div>
-
-            </div>
-
-            {/* Remove File */}
-
-            <button
-              type="button"
-              onClick={removeFile}
+            <p
               className="
-                w-10
-                h-10
-                rounded-lg
-                flex
-                items-center
-                justify-center
-                text-slate-400
-                hover:text-red-400
-                hover:bg-red-500/10
-                transition
+                text-sm
+                font-medium
+                uppercase
+                tracking-wider
+                text-cyan-400
               "
-              aria-label="Remove selected file"
             >
-              <X size={20} />
-            </button>
+              Document Intelligence
+            </p>
+
+            <h1
+              className="
+                mt-1
+                text-3xl
+                font-bold
+                tracking-tight
+                text-white
+              "
+            >
+              Upload Legal Document
+            </h1>
+
+            <p
+              className="
+                mt-2
+                max-w-3xl
+                text-slate-400
+              "
+            >
+              Upload contracts, agreements, judgments
+              or other legal documents for AI-powered
+              analysis.
+            </p>
 
           </div>
 
-          {/* ============================== */}
-          {/* Upload Button */}
-          {/* ============================== */}
+        </div>
 
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={isUploading}
+      </section>
+
+
+      {/* ================================== */}
+      {/* Upload Area */}
+      {/* ================================== */}
+
+      <section
+        className="
+          rounded-2xl
+          border
+          border-slate-800
+          bg-slate-900
+          p-6
+          md:p-8
+        "
+      >
+
+        <div
+          className="
+            rounded-2xl
+            border-2
+            border-dashed
+            border-slate-700
+            bg-slate-950/50
+            px-6
+            py-12
+            text-center
+            transition
+            hover:border-cyan-500/50
+          "
+        >
+
+          {/* Upload Icon */}
+
+          <div className="flex justify-center">
+
+            <div
+              className="
+                flex
+                h-16
+                w-16
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-cyan-500/20
+                bg-cyan-500/10
+                text-cyan-400
+              "
+            >
+              <Upload size={30} />
+            </div>
+
+          </div>
+
+
+          {/* Title */}
+
+          <h2
             className="
-              mt-5
-              w-full
-              px-6
-              py-3
-              rounded-xl
-              bg-cyan-500
-              hover:bg-cyan-400
-              disabled:bg-slate-700
-              disabled:cursor-not-allowed
-              text-white
+              mt-6
+              text-xl
               font-semibold
-              transition
+              text-white
             "
           >
-            {isUploading
-              ? "Uploading..."
-              : "Upload Document"}
-          </button>
+            Drag & Drop Your Legal Document
+          </h2>
+
+
+          {/* Description */}
+
+          <p
+            className="
+              mt-2
+              text-sm
+              text-slate-400
+            "
+          >
+            Supports PDF, DOCX and TXT files
+          </p>
+
+
+          {/* File Input */}
+
+          <input
+            ref={fileInputRef}
+            id="document-upload"
+            type="file"
+            accept=".pdf,.docx,.txt"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+
+          {/* Browse Button */}
+
+          <label
+            htmlFor="document-upload"
+            className="
+              mt-6
+              inline-flex
+              cursor-pointer
+              items-center
+              justify-center
+              rounded-lg
+              bg-cyan-500
+              px-6
+              py-3
+              font-semibold
+              text-white
+              transition
+              hover:bg-cyan-400
+            "
+          >
+            Browse Files
+          </label>
+
+
+          {/* Selected File */}
+
+          {selectedFile && (
+
+            <div
+              className="
+                mx-auto
+                mt-6
+                max-w-xl
+                rounded-xl
+                border
+                border-slate-800
+                bg-slate-900
+                p-4
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-center
+                  gap-3
+                "
+              >
+
+                <FileText
+                  size={22}
+                  className="text-cyan-400"
+                />
+
+                <div className="text-left">
+
+                  <p className="font-medium text-white">
+                    {selectedFile.name}
+                  </p>
+
+                  <p className="text-sm text-slate-500">
+                    {(selectedFile.size / 1024).toFixed(1)}
+                    {" KB"}
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              {/* Upload Button */}
+
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={uploading}
+                className="
+                  mt-5
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  bg-green-500
+                  px-6
+                  py-3
+                  font-semibold
+                  text-white
+                  transition
+                  hover:bg-green-400
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+
+                {uploading ? (
+
+                  <>
+                    <Loader2
+                      size={20}
+                      className="animate-spin"
+                    />
+
+                    Uploading...
+                  </>
+
+                ) : (
+
+                  <>
+                    <Upload size={20} />
+
+                    Upload Document
+                  </>
+
+                )}
+
+              </button>
+
+            </div>
+
+          )}
 
         </div>
+
+      </section>
+
+
+      {/* ================================== */}
+      {/* Messages */}
+      {/* ================================== */}
+
+      {successMessage && (
+
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+            rounded-xl
+            border
+            border-green-500/30
+            bg-green-500/10
+            px-5
+            py-4
+            text-green-400
+          "
+        >
+
+          <CheckCircle size={20} />
+
+          <span>
+            {successMessage}
+          </span>
+
+        </div>
+
       )}
 
-      {/* ============================== */}
-      {/* Upload Message */}
-      {/* ============================== */}
 
-      {uploadMessage && (
-        <div className="
-          bg-slate-900
-          border
-          border-slate-800
-          rounded-xl
-          p-4
-        ">
-          <p className="
-            text-cyan-400
-            font-medium
-          ">
-            {uploadMessage}
-          </p>
+      {errorMessage && (
+
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+            rounded-xl
+            border
+            border-red-500/30
+            bg-red-500/10
+            px-5
+            py-4
+            text-red-400
+          "
+        >
+
+          <AlertCircle size={20} />
+
+          <span>
+            {errorMessage}
+          </span>
+
         </div>
+
       )}
 
-      {/* ============================== */}
-      {/* Information */}
-      {/* ============================== */}
 
-      <div className="
-        grid
-        grid-cols-1
-        md:grid-cols-3
-        gap-4
-      ">
+      {/* ================================== */}
+      {/* Supported File Types */}
+      {/* ================================== */}
 
-        {/* PDF */}
+      <section>
 
-        <div className="
-          bg-slate-900
-          border
-          border-slate-800
-          rounded-xl
-          p-5
-        ">
-          <h3 className="text-white font-semibold">
-            PDF Documents
-          </h3>
+        <div className="mb-5">
 
-          <p className="text-slate-400 text-sm mt-2">
-            Upload legal PDFs for document analysis.
+          <h2 className="text-lg font-semibold text-white">
+            Supported Document Types
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Upload legal documents in any of the
+            supported formats.
           </p>
+
         </div>
 
-        {/* DOCX */}
 
-        <div className="
-          bg-slate-900
-          border
-          border-slate-800
-          rounded-xl
-          p-5
-        ">
-          <h3 className="text-white font-semibold">
-            DOCX Documents
-          </h3>
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-6
+            md:grid-cols-3
+          "
+        >
 
-          <p className="text-slate-400 text-sm mt-2">
-            Analyze contracts and agreements in DOCX format.
-          </p>
+          {/* PDF */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-slate-800
+              bg-slate-900
+              p-6
+            "
+          >
+
+            <FileText
+              size={24}
+              className="text-cyan-400"
+            />
+
+            <h3 className="mt-4 font-semibold text-white">
+              PDF Documents
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-400">
+              Upload legal PDFs for document analysis.
+            </p>
+
+          </div>
+
+
+          {/* DOCX */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-slate-800
+              bg-slate-900
+              p-6
+            "
+          >
+
+            <FileText
+              size={24}
+              className="text-purple-400"
+            />
+
+            <h3 className="mt-4 font-semibold text-white">
+              DOCX Documents
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-400">
+              Analyze contracts and agreements in DOCX
+              format.
+            </p>
+
+          </div>
+
+
+          {/* TXT */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-slate-800
+              bg-slate-900
+              p-6
+            "
+          >
+
+            <FileText
+              size={24}
+              className="text-green-400"
+            />
+
+            <h3 className="mt-4 font-semibold text-white">
+              TXT Documents
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-400">
+              Upload plain-text legal documents for
+              analysis.
+            </p>
+
+          </div>
+
         </div>
 
-        {/* TXT */}
+      </section>
 
-        <div className="
-          bg-slate-900
-          border
-          border-slate-800
-          rounded-xl
-          p-5
-        ">
-          <h3 className="text-white font-semibold">
-            TXT Documents
-          </h3>
 
-          <p className="text-slate-400 text-sm mt-2">
-            Upload plain-text legal documents for analysis.
+      {/* ================================== */}
+      {/* Existing Documents */}
+      {/* ================================== */}
+
+      <section>
+
+        <div className="mb-5">
+
+          <h2 className="text-2xl font-bold text-white">
+            Uploaded Documents
+          </h2>
+
+          <p className="mt-1 text-slate-400">
+            Documents currently stored in your
+            LexAI database.
           </p>
+
         </div>
 
-      </div>
 
-    </main>
+        <DocumentList
+          refreshKey={refreshKey}
+        />
+
+      </section>
+
+
+    </div>
   );
 }
+
 
 export default UploadDocumentPage;
