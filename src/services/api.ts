@@ -1,29 +1,17 @@
 const API_BASE_URL = "http://127.0.0.1:8000";
 
+
 // ========================================
 // Health Check
 // ========================================
 
 export async function healthCheck() {
-  const response = await fetch(`${API_BASE_URL}/health`);
+  const response = await fetch(
+    `${API_BASE_URL}/health`
+  );
 
   if (!response.ok) {
-    throw new Error("Backend health check failed");
-  }
-
-  return response.json();
-}
-
-
-// ========================================
-// Get All Documents
-// ========================================
-
-export async function getDocuments() {
-  const response = await fetch(`${API_BASE_URL}/documents`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch documents");
+    throw new Error("Backend health check failed.");
   }
 
   return response.json();
@@ -40,30 +28,8 @@ export async function getDocumentCount() {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch document count");
-  }
-
-  return response.json();
-}
-
-
-// ========================================
-// Delete Document
-// ========================================
-
-export async function deleteDocument(documentId: number) {
-  const response = await fetch(
-    `${API_BASE_URL}/documents/${documentId}`,
-    {
-      method: "DELETE",
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-
     throw new Error(
-      errorText || "Failed to delete document"
+      "Failed to get document count."
     );
   }
 
@@ -81,36 +47,8 @@ export async function getAIQueryCount() {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch AI query count");
-  }
-
-  return response.json();
-}
-
-
-// ========================================
-// Save AI Query
-// ========================================
-
-export async function saveAIQuery(query: string) {
-  const response = await fetch(
-    `${API_BASE_URL}/queries`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-
     throw new Error(
-      errorText || "Failed to save AI query"
+      "Failed to get AI query count."
     );
   }
 
@@ -122,7 +60,9 @@ export async function saveAIQuery(query: string) {
 // Upload Document
 // ========================================
 
-export async function uploadDocument(file: File) {
+export async function uploadDocument(
+  file: File
+) {
   const formData = new FormData();
 
   formData.append("file", file);
@@ -136,10 +76,92 @@ export async function uploadDocument(file: File) {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorData = await response.json();
 
     throw new Error(
-      errorText || "Failed to upload document"
+      errorData.detail ||
+        "Failed to upload document."
+    );
+  }
+
+  return response.json();
+}
+
+
+// ========================================
+// Get All Documents
+// ========================================
+
+export async function getDocuments() {
+  const response = await fetch(
+    `${API_BASE_URL}/documents`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to get documents."
+    );
+  }
+
+  return response.json();
+}
+
+
+// ========================================
+// Delete Document
+// ========================================
+
+export async function deleteDocument(
+  documentId: number
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${documentId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    throw new Error(
+      errorData.detail ||
+        "Failed to delete document."
+    );
+  }
+
+  return response.json();
+}
+
+
+// ========================================
+// Save AI Query
+// ========================================
+
+export async function saveAIQuery(
+  query: string
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/queries`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        query: query,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    throw new Error(
+      errorData.detail ||
+        "Failed to save AI query."
     );
   }
 

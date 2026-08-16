@@ -31,7 +31,9 @@ function DashboardPage() {
 
   const [aiQueryCount, setAIQueryCount] = useState(0);
 
+  const [caseCount, setCaseCount] = useState(0);
 
+  
   // ========================================
   // Load Dashboard Data
   // ========================================
@@ -44,13 +46,20 @@ function DashboardPage() {
 
     healthCheck()
       .then((data) => {
-        console.log("Backend connected:", data);
+
+        console.log(
+          "Backend connected:",
+          data
+        );
+
       })
       .catch((error) => {
+
         console.error(
           "Backend connection failed:",
           error
         );
+
       });
 
 
@@ -66,7 +75,9 @@ function DashboardPage() {
           data
         );
 
-        setDocumentCount(data.count);
+        setDocumentCount(
+          data.count
+        );
 
       })
       .catch((error) => {
@@ -91,7 +102,9 @@ function DashboardPage() {
           data
         );
 
-        setAIQueryCount(data.count);
+        setAIQueryCount(
+          data.count
+        );
 
       })
       .catch((error) => {
@@ -103,9 +116,51 @@ function DashboardPage() {
 
       });
 
-  }, []);
 
+    // ----------------------------------------
+    // Get Case Count
+    // ----------------------------------------
 
+    fetch(
+      "http://127.0.0.1:8000/cases/count"
+    )
+      .then((response) => {
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Failed to fetch case count"
+          );
+
+        }
+
+        return response.json();
+
+      })
+      .then((data) => {
+
+        console.log(
+          "Case count:",
+          data
+        );
+
+        setCaseCount(
+          data.count
+        );
+
+      })
+      .catch((error) => {
+
+        console.error(
+          "Failed to get case count:",
+          error
+        );
+
+      });
+
+  }, []); 
+  
+  
   // ========================================
   // Dashboard UI
   // ========================================
@@ -395,7 +450,7 @@ function DashboardPage() {
 
           <DashboardCard
             title="Cases"
-            value={89}
+            value={caseCount}
             icon={<Scale />}
             color="bg-green-500/20 text-green-400"
           />

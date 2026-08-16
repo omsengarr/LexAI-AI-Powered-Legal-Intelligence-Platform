@@ -6,8 +6,12 @@ from pydantic import BaseModel
 import shutil
 
 from database import SessionLocal
-from models import Document, AIQuery
+from models import Document, AIQuery, Case
 
+
+# ========================================
+# FastAPI Application
+# ========================================
 
 app = FastAPI(
     title="LexAI Backend",
@@ -66,6 +70,14 @@ class AIQueryRequest(BaseModel):
 
 
 # ========================================
+# Chat Request Model
+# ========================================
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+# ========================================
 # Root Endpoint
 # ========================================
 
@@ -104,7 +116,10 @@ async def upload_document(
             detail="No file selected"
         )
 
-    # Save the actual file
+    # ====================================
+    # Save Physical File
+    # ====================================
+
     file_path = UPLOAD_DIR / file.filename
 
     with file_path.open("wb") as buffer:
@@ -113,7 +128,10 @@ async def upload_document(
             buffer
         )
 
-    # Save document information in PostgreSQL
+    # ====================================
+    # Save Document Information
+    # ====================================
+
     document = Document(
         filename=file.filename,
         content_type=file.content_type
@@ -174,28 +192,43 @@ def delete_document(
     db: Session = Depends(get_db)
 ):
 
-    # Find document in PostgreSQL
+    # ====================================
+    # Find Document
+    # ====================================
+
     document = db.query(Document).filter(
         Document.id == document_id
     ).first()
 
-    # Document does not exist
+    # ====================================
+    # Document Not Found
+    # ====================================
+
     if document is None:
         raise HTTPException(
             status_code=404,
             detail="Document not found"
         )
 
-    # Get filename before deleting database record
+    # ====================================
+    # Get Filename
+    # ====================================
+
     filename = document.filename
 
-    # Delete the physical file
+    # ====================================
+    # Delete Physical File
+    # ====================================
+
     file_path = UPLOAD_DIR / filename
 
     if file_path.exists():
         file_path.unlink()
 
-    # Delete database record
+    # ====================================
+    # Delete Database Record
+    # ====================================
+
     db.delete(document)
     db.commit()
 
@@ -232,19 +265,28 @@ def save_ai_query(
     db: Session = Depends(get_db)
 ):
 
-    # Check that query is not empty
+    # ====================================
+    # Check Empty Query
+    # ====================================
+
     if not query_data.query.strip():
         raise HTTPException(
             status_code=400,
             detail="Query cannot be empty"
         )
 
-    # Create new AI query record
+    # ====================================
+    # Create AI Query
+    # ====================================
+
     ai_query = AIQuery(
         query=query_data.query.strip()
     )
 
+    # ====================================
     # Save to PostgreSQL
+    # ====================================
+
     db.add(ai_query)
     db.commit()
     db.refresh(ai_query)
@@ -255,3 +297,183 @@ def save_ai_query(
         "query_id": ai_query.id,
         "created_at": ai_query.created_at
     }
+
+
+# ========================================
+# AI CHAT
+# ========================================
+
+@app.post("/chat")
+def chat(
+    chat_data: ChatRequest,
+    db: Session = Depends(get_db)
+):
+
+    # ====================================
+    # Check Empty Message
+    # ====================================
+
+    if not chat_data.message.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Message cannot be empty"
+        )
+
+    # ====================================
+    # Clean User Message
+    # ====================================
+
+    user_message = chat_data.message.strip()
+
+
+    # ====================================
+    # Save Chat Query to PostgreSQL
+    # ====================================
+
+    ai_query = AIQuery(
+        query=user_message
+    )
+
+    db.add(ai_query)
+    db.commit()
+    db.refresh(ai_query)
+
+
+    # ====================================
+    # Temporary AI Response
+    # ====================================
+    #
+    # This is only a temporary response.
+    #
+    # In the next steps we will connect
+    # the actual AI model here.
+    #
+
+    ai_response = (
+        "I received your legal question: "
+        f"'{user_message}'. "
+        "The LexAI AI engine will be connected "
+        "here in the next step."
+    )
+
+
+    # ====================================
+    # Return Chat Response
+    # ====================================
+
+    return {
+        "message": "Chat response generated successfully",
+        "response": ai_response,
+        "query_id": ai_query.id
+    }
+
+
+# ========================================
+# Case Search
+# ========================================
+
+@app.get("/cases")
+def get_cases(
+    search: str = "",
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Case)
+
+    if search.strip():
+
+        search_text = f"%{search.strip()}%"
+
+        query = query.filter(
+            (Case.case_number.ilike(search_text)) |
+            (Case.title.ilike(search_text)) |
+            (Case.court.ilike(search_text)) |
+            (Case.case_type.ilike(search_text)) |
+            (Case.description.ilike(search_text))
+        )
+
+    cases = query.order_by(
+        Case.created_at.desc()
+    ).all()
+
+    return cases
+
+
+# ========================================
+# Get Case Count
+# ========================================
+
+@app.get("/cases/count")
+def get_case_count(
+    db: Session = Depends(get_db)
+):
+
+    count = db.query(Case).count()
+
+    return {
+        "count": count
+    }
+
+
+# ========================================
+# Get Single Case
+# ========================================
+
+@app.get("/cases/{case_id}")
+def get_case(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    case = db.query(Case).filter(
+        Case.id == case_id
+    ).first()
+
+    if case is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+    return case
+
+
+# ========================================
+# Create New Case
+# ========================================
+
+@app.post("/cases")
+def create_case(
+    case_number: str,
+    title: str,
+    court: str = "",
+    case_type: str = "",
+    description: str = "",
+    status: str = "Active",
+    db: Session = Depends(get_db)
+):
+
+    existing_case = db.query(Case).filter(
+        Case.case_number == case_number
+    ).first()
+
+    if existing_case:
+        raise HTTPException(
+            status_code=400,
+            detail="Case number already exists"
+        )
+
+    new_case = Case(
+        case_number=case_number,
+        title=title,
+        court=court,
+        case_type=case_type,
+        description=description,
+        status=status
+    )
+
+    db.add(new_case)
+    db.commit()
+    db.refresh(new_case)
+
+    return new_case
