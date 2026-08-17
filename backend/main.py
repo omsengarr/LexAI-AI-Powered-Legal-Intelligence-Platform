@@ -527,3 +527,32 @@ def update_case(
     db.refresh(case)
 
     return case
+
+
+# ========================================
+# Delete Case
+# ========================================
+
+@app.delete("/cases/{case_id}")
+def delete_case(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    case = db.query(Case).filter(
+        Case.id == case_id
+    ).first()
+
+    if case is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+    db.delete(case)
+    db.commit()
+
+    return {
+        "message": "Case deleted successfully",
+        "case_id": case_id
+    }
