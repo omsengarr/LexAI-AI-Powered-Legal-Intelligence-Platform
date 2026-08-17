@@ -477,3 +477,53 @@ def create_case(
     db.refresh(new_case)
 
     return new_case
+
+
+# ========================================
+# Update Case
+# ========================================
+
+@app.put("/cases/{case_id}")
+def update_case(
+    case_id: int,
+    case_number: str,
+    title: str,
+    court: str = "",
+    case_type: str = "",
+    description: str = "",
+    status: str = "Active",
+    db: Session = Depends(get_db)
+):
+
+    case = db.query(Case).filter(
+        Case.id == case_id
+    ).first()
+
+    if case is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+    existing_case = db.query(Case).filter(
+        Case.case_number == case_number,
+        Case.id != case_id
+    ).first()
+
+    if existing_case:
+        raise HTTPException(
+            status_code=400,
+            detail="Case number already exists"
+        )
+
+    case.case_number = case_number
+    case.title = title
+    case.court = court
+    case.case_type = case_type
+    case.description = description
+    case.status = status
+
+    db.commit()
+    db.refresh(case)
+
+    return case
