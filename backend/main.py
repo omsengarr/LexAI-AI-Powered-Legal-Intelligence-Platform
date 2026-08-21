@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pathlib import Path
 from pydantic import BaseModel
+from typing import List
 import shutil
 
 from database import SessionLocal
@@ -75,6 +76,14 @@ class AIQueryRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+
+
+# ========================================
+# Page Lock Request Model
+# ========================================
+
+class PageLockRequest(BaseModel):
+    locked_pages: List[int] = []
 
 
 # ========================================
@@ -555,4 +564,152 @@ def delete_case(
     return {
         "message": "Case deleted successfully",
         "case_id": case_id
+    }
+
+
+# ========================================
+# Extract Document Text
+# ========================================
+
+@app.get("/documents/{document_id}/text")
+def get_document_text(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+
+    # Find document in database
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # Physical file path
+    file_path = UPLOAD_DIR / document.filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Uploaded file not found"
+        )
+
+    # Import extractor
+    from document_extractor import extract_document_text
+
+    try:
+
+        pages = extract_document_text(
+            file_path
+        )
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document extraction failed: {str(error)}"
+        )
+
+    return {
+        "document_id": document.id,
+        "filename": document.filename,
+        "total_pages": len(pages),
+        "pages": pages
+    }
+
+
+# ========================================
+# Analyze Selected Document Pages
+# ========================================
+
+@app.post("/documents/{document_id}/analyze-pages")
+def analyze_document_pages(
+    document_id: int,
+    request: PageLockRequest,
+    db: Session = Depends(get_db)
+):
+
+    # Find document in database
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # Build physical file path
+    file_path = UPLOAD_DIR / document.filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Physical document file not found"
+        )
+
+    # Extract document text
+    from document_extractor import extract_document_text
+
+    try:
+        pages = extract_document_text(file_path)
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document extraction failed: {str(error)}"
+        )
+
+    total_pages = len(pages)
+
+    # Validate locked page numbers
+    invalid_pages = [
+        page for page in request.locked_pages
+        if page < 1 or page > total_pages
+    ]
+
+    if invalid_pages:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Invalid page number",
+                "invalid_pages": invalid_pages,
+                "total_pages": total_pages
+            }
+        )
+
+    # Remove duplicate page numbers
+    locked_pages = sorted(
+        set(request.locked_pages)
+    )
+
+    # Select only pages that are NOT locked
+    allowed_pages = [
+        page
+        for page in pages
+        if page["page_number"] not in locked_pages
+    ]
+
+    return {
+        "document_id": document_id,
+        "filename": document.filename,
+        "total_pages": total_pages,
+        "locked_pages": locked_pages,
+        "analyzed_pages": [
+            page["page_number"]
+            for page in allowed_pages
+        ],
+        "analyzed_page_count": len(allowed_pages),
+        "pages": allowed_pages
     }
