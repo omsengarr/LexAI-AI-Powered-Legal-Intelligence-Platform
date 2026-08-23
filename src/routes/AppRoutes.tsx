@@ -20,6 +20,7 @@ import DashboardPage from "../pages/Dashboard/DashboardPage";
 
 import UploadDocumentPage from "../pages/Documents/UploadDocumentPage";
 import DocumentList from "../pages/Documents/DocumentList";
+import DocumentAnalysisPage from "../pages/Documents/DocumentAnalysisPage";
 
 // ========================================
 // ANALYTICS
@@ -163,6 +164,21 @@ function AppRoutes() {
             <ProtectedRoute>
               <AppLayout>
                 <UploadDocumentPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ======================================== */}
+        {/* DOCUMENT ANALYSIS */}
+        {/* ======================================== */}
+
+        <Route
+          path="/documents/analyze"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DocumentAnalysisPage />
               </AppLayout>
             </ProtectedRoute>
           }

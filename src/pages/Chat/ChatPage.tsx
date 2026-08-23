@@ -3,7 +3,7 @@ import { useState } from "react";
 import ChatMessage from "../../components/chat/ChatMessage";
 import ChatInput from "../../components/chat/ChatInput";
 
-import { saveAIQuery } from "../../services/api";
+import { sendChatMessage } from "../../services/api";
 
 import {
   Bot,
@@ -62,29 +62,31 @@ function ChatPage() {
 
 
     // ========================================
-    // Save Query To Backend
+    // Send Message To Backend
     // ========================================
 
     try {
 
       const result =
-        await saveAIQuery(message);
+        await sendChatMessage(message);
+
 
       console.log(
-        "AI query saved:",
+        "Chat response:",
         result
       );
 
 
       // ======================================
-      // Temporary AI Response
+      // Add AI Response
       // ======================================
 
       setMessages((prev) => [
         ...prev,
         {
           text:
-            "I have received your legal query. AI-powered legal analysis will be connected to this chat in the next stage.",
+            result.response ||
+            "The AI did not return a response.",
           sender: "ai",
         },
       ]);
@@ -93,7 +95,7 @@ function ChatPage() {
     } catch (error) {
 
       console.error(
-        "Failed to save AI query:",
+        "Failed to send chat message:",
         error
       );
 
