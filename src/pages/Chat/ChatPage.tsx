@@ -45,6 +45,9 @@ function ChatPage() {
     }
 
 
+    const userMessage = message.trim();
+
+
     // ========================================
     // Add User Message
     // ========================================
@@ -52,11 +55,15 @@ function ChatPage() {
     setMessages((prev) => [
       ...prev,
       {
-        text: message,
+        text: userMessage,
         sender: "user",
       },
     ]);
 
+
+    // ========================================
+    // Start Loading
+    // ========================================
 
     setLoading(true);
 
@@ -68,7 +75,9 @@ function ChatPage() {
     try {
 
       const result =
-        await sendChatMessage(message);
+        await sendChatMessage(
+          userMessage
+        );
 
 
       console.log(
@@ -86,7 +95,7 @@ function ChatPage() {
         {
           text:
             result.response ||
-            "The AI did not return a response.",
+            "I received your question, but no response was returned.",
           sender: "ai",
         },
       ]);
@@ -95,10 +104,14 @@ function ChatPage() {
     } catch (error) {
 
       console.error(
-        "Failed to send chat message:",
+        "Chat request failed:",
         error
       );
 
+
+      // ======================================
+      // Display Error
+      // ======================================
 
       setMessages((prev) => [
         ...prev,
@@ -111,6 +124,10 @@ function ChatPage() {
 
 
     } finally {
+
+      // ======================================
+      // Stop Loading
+      // ======================================
 
       setLoading(false);
 
@@ -162,7 +179,14 @@ function ChatPage() {
         />
 
 
-        <div className="relative flex items-center gap-4">
+        <div
+          className="
+            relative
+            flex
+            items-center
+            gap-4
+          "
+        >
 
           <div
             className="
@@ -178,7 +202,9 @@ function ChatPage() {
               text-cyan-400
             "
           >
+
             <Bot size={30} />
+
           </div>
 
 
@@ -195,7 +221,12 @@ function ChatPage() {
             </h1>
 
 
-            <p className="text-slate-400 mt-1">
+            <p
+              className="
+                text-slate-400
+                mt-1
+              "
+            >
               Ask questions and explore legal information
               with LexAI.
             </p>
@@ -221,6 +252,10 @@ function ChatPage() {
         "
       >
 
+        {/* ================================= */}
+        {/* Legal Intelligence Card */}
+        {/* ================================= */}
+
         <div
           className="
             bg-slate-900
@@ -231,22 +266,41 @@ function ChatPage() {
           "
         >
 
-          <div className="flex items-center gap-3">
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
 
             <ShieldCheck
               size={22}
               className="text-cyan-400"
             />
 
+
             <div>
 
-              <h3 className="text-white font-semibold">
+              <h3
+                className="
+                  text-white
+                  font-semibold
+                "
+              >
                 Legal Intelligence
               </h3>
 
-              <p className="text-slate-500 text-sm mt-1">
-                Your queries are securely recorded in
-                the LexAI backend.
+
+              <p
+                className="
+                  text-slate-500
+                  text-sm
+                  mt-1
+                "
+              >
+                Your queries are securely processed
+                through the LexAI backend.
               </p>
 
             </div>
@@ -256,6 +310,10 @@ function ChatPage() {
         </div>
 
 
+        {/* ================================= */}
+        {/* AI Assistant Card */}
+        {/* ================================= */}
+
         <div
           className="
             bg-slate-900
@@ -266,20 +324,39 @@ function ChatPage() {
           "
         >
 
-          <div className="flex items-center gap-3">
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
 
             <MessageSquare
               size={22}
               className="text-purple-400"
             />
 
+
             <div>
 
-              <h3 className="text-white font-semibold">
+              <h3
+                className="
+                  text-white
+                  font-semibold
+                "
+              >
                 AI Assistant
               </h3>
 
-              <p className="text-slate-500 text-sm mt-1">
+
+              <p
+                className="
+                  text-slate-500
+                  text-sm
+                  mt-1
+                "
+              >
                 Ask about contracts, cases, compliance
                 and legal risks.
               </p>
@@ -307,7 +384,9 @@ function ChatPage() {
         "
       >
 
+        {/* ================================= */}
         {/* Chat Messages */}
+        {/* ================================= */}
 
         <div
           className="
@@ -332,11 +411,20 @@ function ChatPage() {
           )}
 
 
-          {/* Loading */}
+          {/* ================================= */}
+          {/* Loading Indicator */}
+          {/* ================================= */}
 
           {loading && (
 
-            <div className="flex items-center gap-3 text-slate-400">
+            <div
+              className="
+                flex
+                items-center
+                gap-3
+                text-slate-400
+              "
+            >
 
               <div
                 className="
@@ -359,9 +447,16 @@ function ChatPage() {
         </div>
 
 
+        {/* ================================= */}
         {/* Chat Input */}
+        {/* ================================= */}
 
-        <div className="border-t border-slate-800">
+        <div
+          className="
+            border-t
+            border-slate-800
+          "
+        >
 
           <ChatInput
             onSend={handleSend}

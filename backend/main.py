@@ -5,6 +5,30 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List
 import shutil
+import os
+from dotenv import load_dotenv
+from google import genai
+
+
+# ========================================
+# Environment Variables
+# ========================================
+
+load_dotenv()
+
+
+# ========================================
+# Gemini Client
+# ========================================
+
+gemini_client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
+
+
+# ========================================
+# Database Imports
+# ========================================
 
 from database import SessionLocal
 from models import Document, AIQuery, Case
@@ -334,7 +358,6 @@ def chat(
 
     user_message = chat_data.message.strip()
 
-
     # ====================================
     # Save Chat Query to PostgreSQL
     # ====================================
@@ -347,24 +370,45 @@ def chat(
     db.commit()
     db.refresh(ai_query)
 
-
     # ====================================
-    # Temporary AI Response
+    # Generate Gemini AI Response
     # ====================================
-    #
-    # This is only a temporary response.
-    #
-    # In the next steps we will connect
-    # the actual AI model here.
-    #
 
-    ai_response = (
-        "I received your legal question: "
-        f"'{user_message}'. "
-        "The LexAI AI engine will be connected "
-        "here in the next step."
-    )
+    try:
 
+        response = gemini_client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=(
+                "You are LexAI, an AI legal assistant. "
+                "Provide clear, concise and educational "
+                "legal information. "
+                "Do not claim to be a lawyer. "
+                "Remind users that your response is "
+                "general legal information and not a "
+                "substitute for professional legal advice.\n\n"
+                f"User question: {user_message}"
+            )
+        )
+
+        ai_response = response.text
+
+        if not ai_response:
+            ai_response = (
+                "I was unable to generate a response "
+                "for your question."
+            )
+
+    except Exception as error:
+
+        print(
+            "Gemini API error:",
+            error
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate AI response."
+        )
 
     # ====================================
     # Return Chat Response
@@ -663,9 +707,13 @@ def analyze_document_pages(
     from document_extractor import extract_document_text
 
     try:
-        pages = extract_document_text(file_path)
+
+        pages = extract_document_text(
+            file_path
+        )
 
     except Exception as error:
+
         raise HTTPException(
             status_code=500,
             detail=f"Document extraction failed: {str(error)}"
@@ -675,7 +723,8 @@ def analyze_document_pages(
 
     # Validate locked page numbers
     invalid_pages = [
-        page for page in request.locked_pages
+        page
+        for page in request.locked_pages
         if page < 1 or page > total_pages
     ]
 
