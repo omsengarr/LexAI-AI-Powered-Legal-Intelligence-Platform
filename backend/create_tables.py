@@ -1,5 +1,5 @@
 from database import engine, Base
-from models import Document, AIQuery, Case
+from models import Document, AIQuery, Case, DocumentChunk
 
 
 print("Creating missing database tables...")

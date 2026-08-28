@@ -110,3 +110,38 @@ class Case(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+# ========================================
+# Document Chunk Model
+# ========================================
+
+class DocumentChunk(Base):
+
+    __tablename__ = "document_chunks"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    document_id = Column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    page_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    chunk_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    text = Column(
+        Text,
+        nullable=False
+    )

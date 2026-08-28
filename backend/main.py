@@ -31,7 +31,7 @@ gemini_client = genai.Client(
 # ========================================
 
 from database import SessionLocal
-from models import Document, AIQuery, Case
+from models import Document, AIQuery, Case, DocumentChunk
 
 
 # ========================================
@@ -761,4 +761,222 @@ def analyze_document_pages(
         ],
         "analyzed_page_count": len(allowed_pages),
         "pages": allowed_pages
+    }
+
+# ========================================
+# Search Document Chunks
+# ========================================
+
+@app.get("/documents/{document_id}/chunks/search")
+def search_document_chunks(
+    document_id: int,
+    query: str,
+    db: Session = Depends(get_db)
+):
+
+    # ====================================
+    # Check Document
+    # ====================================
+
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # ====================================
+    # Check Empty Query
+    # ====================================
+
+    if not query.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Search query cannot be empty"
+        )
+
+    # ====================================
+    # Search Chunks
+    # ====================================
+
+    search_text = f"%{query.strip()}%"
+
+    chunks = db.query(DocumentChunk).filter(
+        DocumentChunk.document_id == document_id,
+        DocumentChunk.text.ilike(search_text)
+    ).order_by(
+        DocumentChunk.chunk_number
+    ).all()
+
+    # ====================================
+    # Return Results
+    # ====================================
+
+    return {
+        "document_id": document_id,
+        "query": query.strip(),
+        "total_results": len(chunks),
+        "results": [
+            {
+                "chunk_id": chunk.id,
+                "page_number": chunk.page_number,
+                "chunk_number": chunk.chunk_number,
+                "text": chunk.text
+            }
+            for chunk in chunks
+        ]
+    }
+
+
+# ========================================
+# Ask AI About Document
+# ========================================
+
+@app.post("/documents/{document_id}/ask")
+def ask_document(
+    document_id: int,
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+):
+
+    # ====================================
+    # Check Document
+    # ====================================
+
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # ====================================
+    # Check Empty Question
+    # ====================================
+
+    if not request.message.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty"
+        )
+
+    user_question = request.message.strip()
+
+    # ====================================
+    # Find Relevant Document Chunks
+    # ====================================
+
+    search_words = user_question.lower().split()
+
+    chunks = []
+
+    for word in search_words:
+
+        if len(word) < 3:
+            continue
+
+        search_text = f"%{word}%"
+
+        results = db.query(DocumentChunk).filter(
+            DocumentChunk.document_id == document_id,
+            DocumentChunk.text.ilike(search_text)
+        ).order_by(
+            DocumentChunk.chunk_number
+        ).all()
+
+        for chunk in results:
+
+            if chunk not in chunks:
+                chunks.append(chunk)
+
+    # ====================================
+    # No Relevant Chunks
+    # ====================================
+
+    if not chunks:
+
+        raise HTTPException(
+            status_code=404,
+            detail="No relevant information found in the document."
+        )
+
+    # ====================================
+    # Limit Context
+    # ====================================
+
+    chunks = chunks[:5]
+
+    context = "\n\n".join(
+        [
+            f"Page {chunk.page_number}, "
+            f"Chunk {chunk.chunk_number}:\n"
+            f"{chunk.text}"
+            for chunk in chunks
+        ]
+    )
+
+    # ====================================
+    # Ask Gemini
+    # ====================================
+
+    try:
+
+        response = gemini_client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=(
+                "You are LexAI, an AI legal/document assistant.\n\n"
+                "Answer the user's question using ONLY the "
+                "provided document context.\n\n"
+                "If the answer cannot be found in the context, "
+                "clearly say that the information is not available "
+                "in the document.\n\n"
+                "Do not invent facts.\n\n"
+                f"DOCUMENT CONTEXT:\n{context}\n\n"
+                f"USER QUESTION:\n{user_question}"
+            )
+        )
+
+        ai_response = response.text
+
+        if not ai_response:
+
+            ai_response = (
+                "I was unable to generate an answer."
+            )
+
+    except Exception as error:
+
+        print(
+            "Gemini document analysis error:",
+            error
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate document answer."
+        )
+
+    # ====================================
+    # Return Answer
+    # ====================================
+
+    return {
+        "message": "Document question answered successfully",
+        "document_id": document_id,
+        "question": user_question,
+        "answer": ai_response,
+        "sources": [
+            {
+                "chunk_id": chunk.id,
+                "page_number": chunk.page_number,
+                "chunk_number": chunk.chunk_number
+            }
+            for chunk in chunks
+        ]
     }
