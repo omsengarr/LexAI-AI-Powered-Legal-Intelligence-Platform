@@ -22,7 +22,7 @@ interface DocumentItem {
   id: number;
   filename: string;
   content_type?: string;
-  upload_date?: string;
+  uploaded_at?: string;
 }
 
 
@@ -142,8 +142,6 @@ function DocumentList({
       );
 
 
-      // Remove immediately from UI
-
       setDocuments(
         (previous) =>
           previous.filter(
@@ -175,10 +173,10 @@ function DocumentList({
 
 
   // ========================================
-  // Format Date
+  // Format Date + Time
   // ========================================
 
-  function formatDate(
+  function formatDateTime(
     date?: string
   ) {
 
@@ -186,21 +184,60 @@ function DocumentList({
       return "Unknown date";
     }
 
-    const parsedDate =
-      new Date(date);
+    /*
+     * Backend stores the timestamp in UTC.
+     *
+     * Example:
+     * 2026-08-28T14:13:38.370413
+     *
+     * We explicitly tell JavaScript that this
+     * timestamp is UTC by adding "Z".
+     */
 
-    if (Number.isNaN(
-      parsedDate.getTime()
-    )) {
-      return date;
+    let dateString = date;
+
+    if (
+      !date.endsWith("Z") &&
+      !date.includes("+") &&
+      !/[+-]\d{2}:\d{2}$/.test(date)
+    ) {
+      dateString = `${date}Z`;
     }
 
-    return parsedDate.toLocaleDateString(
+
+    const parsedDate =
+      new Date(dateString);
+
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+
+      return date;
+
+    }
+
+
+    /*
+     * Convert UTC → Asia/Kolkata (IST)
+     */
+
+    return parsedDate.toLocaleString(
       "en-IN",
       {
+        timeZone: "Asia/Kolkata",
+
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+
+        hour12: true,
       }
     );
   }
@@ -219,22 +256,31 @@ function DocumentList({
       contentType?.includes("pdf") ||
       filename?.toLowerCase().endsWith(".pdf")
     ) {
+
       return "PDF";
+
     }
+
 
     if (
       contentType?.includes("word") ||
       filename?.toLowerCase().endsWith(".docx")
     ) {
+
       return "DOCX";
+
     }
+
 
     if (
       contentType?.includes("text") ||
       filename?.toLowerCase().endsWith(".txt")
     ) {
+
       return "TXT";
+
     }
+
 
     return "DOCUMENT";
   }
@@ -289,7 +335,10 @@ function DocumentList({
   // Error State
   // ========================================
 
-  if (error && documents.length === 0) {
+  if (
+    error &&
+    documents.length === 0
+  ) {
 
     return (
 
@@ -359,7 +408,9 @@ function DocumentList({
   // Empty State
   // ========================================
 
-  if (documents.length === 0) {
+  if (
+    documents.length === 0
+  ) {
 
     return (
 
@@ -401,7 +452,9 @@ function DocumentList({
             text-white
           "
         >
+
           No Documents Found
+
         </h3>
 
 
@@ -414,9 +467,11 @@ function DocumentList({
             text-slate-500
           "
         >
+
           Upload your first legal document to
           start using LexAI's document intelligence
           features.
+
         </p>
 
       </div>
@@ -541,7 +596,9 @@ function DocumentList({
                       text-white
                     "
                   >
+
                     {document.filename}
+
                   </h3>
 
 
@@ -590,19 +647,41 @@ function DocumentList({
                 "
               >
 
-                {/* Date */}
+                {/* Upload Date + Time */}
 
-                <span
+                <div
                   className="
                     whitespace-nowrap
-                    text-sm
-                    text-slate-500
+                    text-right
                   "
                 >
-                  {formatDate(
-                    document.upload_date
-                  )}
-                </span>
+
+                  <div
+                    className="
+                      text-xs
+                      text-slate-500
+                      mb-1
+                    "
+                  >
+
+                    Uploaded
+
+                  </div>
+
+                  <div
+                    className="
+                      text-sm
+                      text-slate-300
+                    "
+                  >
+
+                    {formatDateTime(
+                      document.uploaded_at
+                    )}
+
+                  </div>
+
+                </div>
 
 
                 {/* Delete */}
@@ -658,6 +737,7 @@ function DocumentList({
             </div>
 
           );
+
         }
       )}
 
@@ -665,6 +745,5 @@ function DocumentList({
 
   );
 }
-
 
 export default DocumentList;

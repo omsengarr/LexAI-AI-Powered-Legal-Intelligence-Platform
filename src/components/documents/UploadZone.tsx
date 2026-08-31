@@ -1,10 +1,50 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { FaCloudUploadAlt } from "react-icons/fa";
 
 function UploadZone() {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    console.log("Uploaded Files:", acceptedFiles);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) {
+      return;
+    }
+
+    const file = acceptedFiles[0];
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      console.log("Upload successful:", data);
+
+      setMessage(`Uploaded successfully: ${data.filename}`);
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while uploading"
+      );
+    } finally {
+      setUploading(false);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -42,10 +82,17 @@ function UploadZone() {
 
       <button
         type="button"
-        className="mt-8 px-6 py-3 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 transition"
+        disabled={uploading}
+        className="mt-8 px-6 py-3 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 transition disabled:opacity-50"
       >
-        Browse Files
+        {uploading ? "Uploading..." : "Browse Files"}
       </button>
+
+      {message && (
+        <p className="mt-5 text-sm text-cyan-400">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

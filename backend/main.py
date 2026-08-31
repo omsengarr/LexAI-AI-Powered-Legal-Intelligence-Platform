@@ -980,3 +980,192 @@ def ask_document(
             for chunk in chunks
         ]
     }
+
+
+# ========================================
+# Generate Page Summary
+# ========================================
+
+@app.post("/documents/{document_id}/pages/{page_number}/summary")
+def summarize_document_page(
+    document_id: int,
+    page_number: int,
+    request: PageLockRequest,
+    db: Session = Depends(get_db)
+):
+
+    # ====================================
+    # Check Document
+    # ====================================
+
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if document is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # ====================================
+    # Check Locked Page
+    # ====================================
+
+    locked_pages = sorted(
+        set(request.locked_pages)
+    )
+
+    if page_number in locked_pages:
+
+        raise HTTPException(
+            status_code=403,
+            detail="This page is locked and cannot be summarized."
+        )
+
+    # ====================================
+    # Check Page Number
+    # ====================================
+
+    if page_number < 1:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Page number must be greater than 0."
+        )
+
+    # ====================================
+    # Physical File
+    # ====================================
+
+    file_path = UPLOAD_DIR / document.filename
+
+    if not file_path.exists():
+
+        raise HTTPException(
+            status_code=404,
+            detail="Uploaded file not found"
+        )
+
+    # ====================================
+    # Extract Document Pages
+    # ====================================
+
+    from document_extractor import extract_document_text
+
+    try:
+
+        pages = extract_document_text(
+            file_path
+        )
+
+    except Exception as error:
+
+        print(
+            "Document extraction error:",
+            error
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Document extraction failed."
+        )
+
+    # ====================================
+    # Validate Page Number
+    # ====================================
+
+    selected_page = None
+
+    for page in pages:
+
+        if page["page_number"] == page_number:
+
+            selected_page = page
+            break
+
+    if selected_page is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Requested page not found."
+        )
+
+    # ====================================
+    # Get Page Text
+    # ====================================
+
+    page_text = selected_page.get(
+        "text",
+        ""
+    ).strip()
+
+    if not page_text:
+
+        raise HTTPException(
+            status_code=400,
+            detail="No text was extracted from this page."
+        )
+
+    # ====================================
+    # Ask Gemini for Summary
+    # ====================================
+
+    try:
+
+        response = gemini_client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=(
+                "You are LexAI, an AI legal/document "
+                "intelligence assistant.\n\n"
+
+                "Summarize the following document page "
+                "clearly and concisely.\n\n"
+
+                "Focus on the important facts, topics, "
+                "requirements, dates, entities, decisions, "
+                "or other meaningful information present "
+                "on the page.\n\n"
+
+                "Do not invent information.\n\n"
+
+                "Use ONLY the provided page text.\n\n"
+
+                "PAGE TEXT:\n"
+                f"{page_text}"
+            )
+        )
+
+        summary = response.text
+
+        if not summary:
+
+            summary = (
+                "I was unable to generate a summary "
+                "for this page."
+            )
+
+    except Exception as error:
+
+        print(
+            "Gemini page summary error:",
+            error
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate page summary."
+        )
+
+    # ====================================
+    # Return Summary
+    # ====================================
+
+    return {
+        "message": "Page summary generated successfully",
+        "document_id": document_id,
+        "filename": document.filename,
+        "page_number": page_number,
+        "summary": summary
+    }

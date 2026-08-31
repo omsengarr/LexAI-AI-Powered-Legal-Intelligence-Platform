@@ -242,6 +242,45 @@ export async function analyzeDocumentPages(
 
 
 // ========================================
+// Summarize Individual Document Page
+// ========================================
+
+export async function summarizeDocumentPage(
+  documentId: number,
+  pageNumber: number,
+  lockedPages: number[] = []
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${documentId}/pages/${pageNumber}/summary`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+
+      body: JSON.stringify({
+        locked_pages: lockedPages,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData =
+      await response.json();
+
+    throw new Error(
+      errorData.detail ||
+        "Failed to generate page summary."
+    );
+  }
+
+  return response.json();
+}
+
+
+// ========================================
 // AI Chat
 // ========================================
 

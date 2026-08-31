@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import { useEffect, useState } from "react";
 import {
   FileText,
@@ -5,11 +6,14 @@ import {
   Unlock,
   Loader2,
   ShieldCheck,
+  Sparkles,
+  AlertCircle,
 } from "lucide-react";
 
 import {
   getDocumentText,
   analyzeDocumentPages,
+  summarizeDocumentPage,
 } from "../../services/api";
 
 
@@ -27,6 +31,10 @@ interface DocumentData {
   filename: string;
   total_pages: number;
   pages: DocumentPage[];
+}
+
+interface PageSummary {
+  [pageNumber: number]: string;
 }
 
 
@@ -49,12 +57,14 @@ function DocumentAnalysisPage() {
   const [errorMessage, setErrorMessage] =
     useState("");
 
+
   // ======================================
   // Privacy State
   // ======================================
 
   const [lockedPages, setLockedPages] =
     useState<number[]>([]);
+
 
   // ======================================
   // Analysis State
@@ -65,6 +75,22 @@ function DocumentAnalysisPage() {
 
   const [analysisResult, setAnalysisResult] =
     useState<any>(null);
+
+
+  // ======================================
+  // Page Summary State
+  // ======================================
+
+  const [pageSummaries, setPageSummaries] =
+    useState<PageSummary>({});
+
+  const [summarizingPage, setSummarizingPage] =
+    useState<number | null>(null);
+
+  const [summaryErrors, setSummaryErrors] =
+    useState<{
+      [pageNumber: number]: string;
+    }>({});
 
 
   // ======================================
@@ -147,11 +173,12 @@ function DocumentAnalysisPage() {
     setLockedPages(
       (previousPages) => {
 
-        if (
+        const isCurrentlyLocked =
           previousPages.includes(
             pageNumber
-          )
-        ) {
+          );
+
+        if (isCurrentlyLocked) {
 
           return previousPages.filter(
             (page) =>
@@ -159,6 +186,35 @@ function DocumentAnalysisPage() {
           );
 
         }
+
+        // Remove any existing summary
+        // when page becomes locked.
+
+        setPageSummaries(
+          (previousSummaries) => {
+
+            const updated = {
+              ...previousSummaries,
+            };
+
+            delete updated[pageNumber];
+
+            return updated;
+          }
+        );
+
+        setSummaryErrors(
+          (previousErrors) => {
+
+            const updated = {
+              ...previousErrors,
+            };
+
+            delete updated[pageNumber];
+
+            return updated;
+          }
+        );
 
         return [
           ...previousPages,
@@ -169,6 +225,103 @@ function DocumentAnalysisPage() {
 
       }
     );
+  }
+
+
+  // ======================================
+  // Generate Page Summary
+  // ======================================
+
+  async function handleSummarizePage(
+    pageNumber: number
+  ) {
+
+    if (!documentData) {
+      return;
+    }
+
+
+    // Do not allow locked pages
+    // to be summarized.
+
+    if (
+      lockedPages.includes(
+        pageNumber
+      )
+    ) {
+
+      setSummaryErrors(
+        (previous) => ({
+          ...previous,
+          [pageNumber]:
+            "This page is locked and cannot be summarized.",
+        })
+      );
+
+      return;
+    }
+
+
+    try {
+
+      setSummarizingPage(
+        pageNumber
+      );
+
+      setSummaryErrors(
+        (previous) => {
+
+          const updated = {
+            ...previous,
+          };
+
+          delete updated[pageNumber];
+
+          return updated;
+        }
+      );
+
+
+      const result =
+        await summarizeDocumentPage(
+          documentData.document_id,
+          pageNumber,
+          lockedPages
+        );
+
+
+      setPageSummaries(
+        (previous) => ({
+          ...previous,
+          [pageNumber]:
+            result.summary,
+        })
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Page summary failed:",
+        error
+      );
+
+      setSummaryErrors(
+        (previous) => ({
+          ...previous,
+          [pageNumber]:
+            error instanceof Error
+              ? error.message
+              : "Failed to generate page summary.",
+        })
+      );
+
+    } finally {
+
+      setSummarizingPage(
+        null
+      );
+
+    }
   }
 
 
@@ -258,7 +411,10 @@ function DocumentAnalysisPage() {
   // Error
   // ======================================
 
-  if (errorMessage && !documentData) {
+  if (
+    errorMessage &&
+    !documentData
+  ) {
 
     return (
       <div
@@ -421,7 +577,7 @@ function DocumentAnalysisPage() {
 
 
       {/* ================================= */}
-      {/* Error */}
+      {/* Global Error */}
       {/* ================================= */}
 
       {errorMessage && (
@@ -672,6 +828,21 @@ function DocumentAnalysisPage() {
                 page.page_number
               );
 
+            const isSummarizing =
+              summarizingPage ===
+              page.page_number;
+
+            const summary =
+              pageSummaries[
+                page.page_number
+              ];
+
+            const summaryError =
+              summaryErrors[
+                page.page_number
+              ];
+
+
             return (
 
               <div
@@ -688,12 +859,18 @@ function DocumentAnalysisPage() {
                 `}
               >
 
+                {/* ========================= */}
+                {/* Page Header */}
+                {/* ========================= */}
+
                 <div
                   className="
                     flex
-                    items-center
-                    justify-between
+                    flex-col
                     gap-4
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
                   "
                 >
 
@@ -710,6 +887,7 @@ function DocumentAnalysisPage() {
                         flex
                         h-10
                         w-10
+                        shrink-0
                         items-center
                         justify-center
                         rounded-lg
@@ -748,76 +926,370 @@ function DocumentAnalysisPage() {
                   </div>
 
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      togglePageLock(
-                        page.page_number
-                      )
-                    }
-                    className={`
-                      inline-flex
+                  {/* Page Actions */}
+
+                  <div
+                    className="
+                      flex
+                      flex-wrap
                       items-center
                       gap-2
-                      rounded-lg
-                      px-4
-                      py-2
-                      text-sm
-                      font-semibold
-                      transition
-                      ${
-                        isLocked
-                          ? "bg-green-500/10 text-green-400 hover:bg-green-500/20"
-                          : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                      }
-                    `}
-                  >
-
-                    {isLocked ? (
-                      <>
-                        <Unlock size={17} />
-                        Unlock Page
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={17} />
-                        Lock Page
-                      </>
-                    )}
-
-                  </button>
-
-                </div>
-
-
-                {/* Temporary text preview */}
-
-                <div
-                  className="
-                    mt-5
-                    max-h-80
-                    overflow-y-auto
-                    rounded-xl
-                    border
-                    border-slate-800
-                    bg-slate-950
-                    p-5
-                  "
-                >
-
-                  <p
-                    className="
-                      whitespace-pre-wrap
-                      text-sm
-                      leading-7
-                      text-slate-300
                     "
                   >
-                    {page.text ||
-                      "No text extracted from this page."}
-                  </p>
+
+                    {/* Summarize */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSummarizePage(
+                          page.page_number
+                        )
+                      }
+                      disabled={
+                        isLocked ||
+                        isSummarizing
+                      }
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        bg-cyan-500/10
+                        px-4
+                        py-2
+                        text-sm
+                        font-semibold
+                        text-cyan-400
+                        transition
+                        hover:bg-cyan-500/20
+                        disabled:cursor-not-allowed
+                        disabled:opacity-40
+                      "
+                    >
+
+                      {isSummarizing ? (
+
+                        <>
+                          <Loader2
+                            size={17}
+                            className="animate-spin"
+                          />
+
+                          Summarizing...
+                        </>
+
+                      ) : (
+
+                        <>
+                          <Sparkles size={17} />
+
+                          Summarize Page
+                        </>
+
+                      )}
+
+                    </button>
+
+
+                    {/* Lock / Unlock */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        togglePageLock(
+                          page.page_number
+                        )
+                      }
+                      className={`
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-lg
+                        px-4
+                        py-2
+                        text-sm
+                        font-semibold
+                        transition
+                        ${
+                          isLocked
+                            ? "bg-green-500/10 text-green-400 hover:bg-green-500/20"
+                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                        }
+                      `}
+                    >
+
+                      {isLocked ? (
+
+                        <>
+                          <Unlock size={17} />
+
+                          Unlock Page
+                        </>
+
+                      ) : (
+
+                        <>
+                          <Lock size={17} />
+
+                          Lock Page
+                        </>
+
+                      )}
+
+                    </button>
+
+                  </div>
 
                 </div>
+
+
+                {/* ========================= */}
+                {/* Locked Page */}
+                {/* ========================= */}
+
+                {isLocked ? (
+
+                  <div
+                    className="
+                      mt-5
+                      flex
+                      flex-col
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-red-500/20
+                      bg-slate-950
+                      px-6
+                      py-10
+                      text-center
+                    "
+                  >
+
+                    <Lock
+                      size={32}
+                      className="text-red-400"
+                    />
+
+                    <h4
+                      className="
+                        mt-3
+                        font-semibold
+                        text-red-400
+                      "
+                    >
+                      Page Locked
+                    </h4>
+
+                    <p
+                      className="
+                        mt-1
+                        max-w-md
+                        text-sm
+                        text-slate-500
+                      "
+                    >
+                      This page contains private or
+                      sensitive information and has been
+                      excluded from AI analysis.
+                    </p>
+
+                  </div>
+
+                ) : (
+
+                  <>
+                    {/* ======================= */}
+                    {/* Page Text */}
+                    {/* ======================= */}
+
+                    <div
+                      className="
+                        mt-5
+                        max-h-80
+                        overflow-y-auto
+                        rounded-xl
+                        border
+                        border-slate-800
+                        bg-slate-950
+                        p-5
+                      "
+                    >
+
+                      <p
+                        className="
+                          whitespace-pre-wrap
+                          text-sm
+                          leading-7
+                          text-slate-300
+                        "
+                      >
+                        {page.text ||
+                          "No text extracted from this page."}
+                      </p>
+
+                    </div>
+
+
+                    {/* ======================= */}
+                    {/* Summary Error */}
+                    {/* ======================= */}
+
+                    {summaryError && (
+
+                      <div
+                        className="
+                          mt-4
+                          flex
+                          items-start
+                          gap-3
+                          rounded-xl
+                          border
+                          border-red-500/30
+                          bg-red-500/10
+                          px-4
+                          py-3
+                          text-sm
+                          text-red-400
+                        "
+                      >
+
+                        <AlertCircle
+                          size={18}
+                          className="mt-0.5 shrink-0"
+                        />
+
+                        <span>
+                          {summaryError}
+                        </span>
+
+                      </div>
+
+                    )}
+
+
+{/* ======================= */}
+{/* AI Summary */}
+{/* ======================= */}
+
+{summary && (
+
+  <div
+    className="
+      mt-5
+      rounded-xl
+      border
+      border-cyan-500/20
+      bg-cyan-500/5
+      p-5
+    "
+  >
+
+    {/* Summary Header */}
+
+    <div
+      className="
+        flex
+        items-center
+        gap-2
+      "
+    >
+
+      <Sparkles
+        size={20}
+        className="text-cyan-400"
+      />
+
+      <h4
+        className="
+          font-semibold
+          text-white
+        "
+      >
+        AI Page Summary
+      </h4>
+
+    </div>
+
+
+    {/* Summary Content */}
+
+    <div
+      className="
+        mt-4
+        text-sm
+        leading-7
+        text-slate-300
+      "
+    >
+
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => (
+            <h1 className="mb-4 text-xl font-bold text-white">
+              {children}
+            </h1>
+          ),
+
+          h2: ({ children }) => (
+            <h2 className="mb-3 mt-6 text-lg font-bold text-cyan-400">
+              {children}
+            </h2>
+          ),
+
+          h3: ({ children }) => (
+            <h3 className="mb-3 mt-5 text-base font-semibold text-white">
+              {children}
+            </h3>
+          ),
+
+          p: ({ children }) => (
+            <p className="mb-4 leading-7 text-slate-300">
+              {children}
+            </p>
+          ),
+
+          ul: ({ children }) => (
+            <ul className="mb-4 ml-6 list-disc space-y-2">
+              {children}
+            </ul>
+          ),
+
+          ol: ({ children }) => (
+            <ol className="mb-4 ml-6 list-decimal space-y-2">
+              {children}
+            </ol>
+          ),
+
+          li: ({ children }) => (
+            <li className="pl-1 text-slate-300">
+              {children}
+            </li>
+          ),
+
+          strong: ({ children }) => (
+            <strong className="font-semibold text-white">
+              {children}
+            </strong>
+          ),
+
+          hr: () => (
+            <hr className="my-6 border-slate-700" />
+          ),
+        }}
+      >
+        {summary}
+      </ReactMarkdown>
+
+    </div>
+
+  </div>
+
+)}
+                   </>
+
+                )}
 
               </div>
 
@@ -827,7 +1299,6 @@ function DocumentAnalysisPage() {
         )}
 
       </section>
-
 
       {/* ================================= */}
       {/* Analysis Result */}
