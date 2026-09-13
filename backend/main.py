@@ -31,7 +31,7 @@ gemini_client = genai.Client(
 # Database Imports
 # ========================================
 
-from database import SessionLocal
+from database import SessionLocal, Base, engine
 from models import User, Document, AIQuery, Case, DocumentChunk
 
 
