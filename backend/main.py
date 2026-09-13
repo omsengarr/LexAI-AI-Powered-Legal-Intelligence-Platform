@@ -31,7 +31,7 @@ gemini_client = genai.Client(
 # Database Imports
 # ========================================
 
-from database import SessionLocal, Base, engine
+from database import Base, SessionLocal, engine
 from models import User, Document, AIQuery, Case, DocumentChunk
 
 
@@ -99,6 +99,132 @@ def get_db():
     finally:
         db.close()
 
+
+# ========================================
+# Automatic Database Initialization
+#
+# Render Free Plan Compatible
+#
+# Creates missing tables and demo users
+# automatically when the backend starts.
+# ========================================
+
+def initialize_database():
+
+    print("Initializing LexAI database...")
+
+    db = None
+
+    try:
+
+        # ------------------------------------
+        # Create missing database tables
+        # ------------------------------------
+
+        Base.metadata.create_all(
+            bind=engine
+        )
+
+        print(
+            "Database tables initialized successfully."
+        )
+
+        # ------------------------------------
+        # Open database session
+        # ------------------------------------
+
+        db = SessionLocal()
+
+        # ------------------------------------
+        # Demo users
+        # ------------------------------------
+
+        demo_users = [
+            {
+                "email": "admin@lexai.demo",
+                "password": "demo",
+                "role": "admin"
+            },
+            {
+                "email": "lawyer@lexai.demo",
+                "password": "demo",
+                "role": "lawyer"
+            },
+            {
+                "email": "researcher@lexai.demo",
+                "password": "demo",
+                "role": "legal_researcher"
+            },
+            {
+                "email": "client@lexai.demo",
+                "password": "demo",
+                "role": "client"
+            }
+        ]
+
+        # ------------------------------------
+        # Create demo users if missing
+        # ------------------------------------
+
+        for user_data in demo_users:
+
+            existing_user = (
+                db.query(User)
+                .filter(
+                    User.email == user_data["email"]
+                )
+                .first()
+            )
+
+            if not existing_user:
+
+                new_user = User(
+                    email=user_data["email"],
+                    password=user_data["password"],
+                    role=user_data["role"]
+                )
+
+                db.add(new_user)
+
+                print(
+                    f"Created demo user: "
+                    f"{user_data['email']}"
+                )
+
+        db.commit()
+
+        print(
+            "LexAI database initialization completed successfully."
+        )
+
+    except Exception as error:
+
+        if db:
+            db.rollback()
+
+        print(
+            "Database initialization failed:",
+            error
+        )
+
+        raise
+
+    finally:
+
+        if db:
+            db.close()
+
+
+# ========================================
+# Initialize Database on Startup
+# ========================================
+
+initialize_database()
+
+
+# ========================================
+# Login Request Model
+# ========================================
 
 class LoginRequest(BaseModel):
     email: str
@@ -202,20 +328,34 @@ def validate_locked_pages(
         )
 
 
+# ========================================
+# Login
+# ========================================
+
 @app.post("/login")
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+def login(
+    request: LoginRequest,
+    db: Session = Depends(get_db)
+):
+
     email = request.email.strip().lower()
     password = request.password.strip()
 
     if not password:
+
         raise HTTPException(
             status_code=400,
             detail="Password is required"
         )
 
-    user = db.query(User).filter(User.email == email).first()
+    user = (
+        db.query(User)
+        .filter(User.email == email)
+        .first()
+    )
 
     if not user:
+
         raise HTTPException(
             status_code=401,
             detail="Unauthorized user"
@@ -230,9 +370,6 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             "role": user.role
         }
     }
-
-
-@app.get("/")
 
 
 # ========================================
@@ -269,20 +406,12 @@ async def upload_document(
     db: Session = Depends(get_db)
 ):
 
-    # ====================================
-    # Check Filename
-    # ====================================
-
     if not file.filename:
 
         raise HTTPException(
             status_code=400,
             detail="No file selected"
         )
-
-    # ====================================
-    # Save Physical File
-    # ====================================
 
     file_path = UPLOAD_DIR / file.filename
 
@@ -292,10 +421,6 @@ async def upload_document(
             file.file,
             buffer
         )
-
-    # ====================================
-    # Save Document Information
-    # ====================================
 
     document = Document(
         filename=file.filename,
@@ -324,9 +449,13 @@ def get_documents(
     db: Session = Depends(get_db)
 ):
 
-    documents = db.query(Document).order_by(
-        Document.uploaded_at.desc()
-    ).all()
+    documents = (
+        db.query(Document)
+        .order_by(
+            Document.uploaded_at.desc()
+        )
+        .all()
+    )
 
     return documents
 
@@ -357,9 +486,13 @@ def delete_document(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -571,9 +704,13 @@ def get_cases(
             (Case.description.ilike(search_text))
         )
 
-    cases = query.order_by(
-        Case.created_at.desc()
-    ).all()
+    cases = (
+        query
+        .order_by(
+            Case.created_at.desc()
+        )
+        .all()
+    )
 
     return cases
 
@@ -604,9 +741,13 @@ def get_case(
     db: Session = Depends(get_db)
 ):
 
-    case = db.query(Case).filter(
-        Case.id == case_id
-    ).first()
+    case = (
+        db.query(Case)
+        .filter(
+            Case.id == case_id
+        )
+        .first()
+    )
 
     if case is None:
 
@@ -633,9 +774,13 @@ def create_case(
     db: Session = Depends(get_db)
 ):
 
-    existing_case = db.query(Case).filter(
-        Case.case_number == case_number
-    ).first()
+    existing_case = (
+        db.query(Case)
+        .filter(
+            Case.case_number == case_number
+        )
+        .first()
+    )
 
     if existing_case:
 
@@ -676,9 +821,13 @@ def update_case(
     db: Session = Depends(get_db)
 ):
 
-    case = db.query(Case).filter(
-        Case.id == case_id
-    ).first()
+    case = (
+        db.query(Case)
+        .filter(
+            Case.id == case_id
+        )
+        .first()
+    )
 
     if case is None:
 
@@ -687,10 +836,14 @@ def update_case(
             detail="Case not found"
         )
 
-    existing_case = db.query(Case).filter(
-        Case.case_number == case_number,
-        Case.id != case_id
-    ).first()
+    existing_case = (
+        db.query(Case)
+        .filter(
+            Case.case_number == case_number,
+            Case.id != case_id
+        )
+        .first()
+    )
 
     if existing_case:
 
@@ -722,9 +875,13 @@ def delete_case(
     db: Session = Depends(get_db)
 ):
 
-    case = db.query(Case).filter(
-        Case.id == case_id
-    ).first()
+    case = (
+        db.query(Case)
+        .filter(
+            Case.id == case_id
+        )
+        .first()
+    )
 
     if case is None:
 
@@ -760,9 +917,13 @@ def get_document_text(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if not document:
 
@@ -806,29 +967,14 @@ def get_document_text(
 
     total_pages = len(pages)
 
-    # ====================================
-    # Parse Locked Pages
-    # ====================================
-
     locked_page_numbers = parse_locked_pages(
         locked_pages
     )
-
-    # ====================================
-    # Validate Locked Pages
-    # ====================================
 
     validate_locked_pages(
         locked_page_numbers,
         total_pages
     )
-
-    # ====================================
-    # SECURITY FILTER
-    #
-    # Locked page text is removed before
-    # returning the API response.
-    # ====================================
 
     accessible_pages = [
         page
@@ -858,9 +1004,13 @@ def analyze_document_pages(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if not document:
 
@@ -897,10 +1047,6 @@ def analyze_document_pages(
 
     total_pages = len(pages)
 
-    # ====================================
-    # Validate Locked Pages
-    # ====================================
-
     invalid_pages = [
         page
         for page in request.locked_pages
@@ -922,10 +1068,6 @@ def analyze_document_pages(
         set(request.locked_pages)
     )
 
-    # ====================================
-    # SECURITY BOUNDARY
-    # ====================================
-
     allowed_pages = [
         page
         for page in pages
@@ -937,10 +1079,6 @@ def analyze_document_pages(
         page["page_number"]
         for page in allowed_pages
     ]
-
-    # ====================================
-    # All Pages Locked
-    # ====================================
 
     if not allowed_pages:
 
@@ -958,10 +1096,6 @@ def analyze_document_pages(
             "analysis": None,
             "pages": []
         }
-
-    # ====================================
-    # Build AI Context
-    # ====================================
 
     analysis_context = "\n\n".join(
         [
@@ -990,10 +1124,6 @@ def analyze_document_pages(
             "analysis": None,
             "pages": allowed_pages
         }
-
-    # ====================================
-    # Gemini Prompt
-    # ====================================
 
     prompt = (
         "You are LexAI, an AI-powered "
@@ -1026,10 +1156,6 @@ def analyze_document_pages(
         f"{analysis_context}"
     )
 
-    # ====================================
-    # Ask Gemini
-    # ====================================
-
     try:
 
         response = gemini_client.models.generate_content(
@@ -1058,10 +1184,6 @@ def analyze_document_pages(
             detail="Failed to generate document analysis."
         )
 
-    # ====================================
-    # Return Analysis
-    # ====================================
-
     return {
         "message": (
             "Document analysis generated successfully "
@@ -1083,14 +1205,6 @@ def analyze_document_pages(
 #
 # PRIVACY:
 # Only unlocked pages are sent to Gemini.
-#
-# Example:
-#
-# 12-page document
-# Locked pages: 2,4
-#
-# Gemini receives:
-# 1,3,5,6,7,8,9,10,11,12
 # ========================================
 
 @app.post("/documents/{document_id}/summary")
@@ -1100,13 +1214,13 @@ def summarize_document(
     db: Session = Depends(get_db)
 ):
 
-    # ====================================
-    # Find Document
-    # ====================================
-
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -1114,10 +1228,6 @@ def summarize_document(
             status_code=404,
             detail="Document not found"
         )
-
-    # ====================================
-    # Physical File
-    # ====================================
 
     file_path = UPLOAD_DIR / document.filename
 
@@ -1127,10 +1237,6 @@ def summarize_document(
             status_code=404,
             detail="Uploaded file not found"
         )
-
-    # ====================================
-    # Extract Document Pages
-    # ====================================
 
     from document_extractor import extract_document_text
 
@@ -1163,28 +1269,14 @@ def summarize_document(
 
     total_pages = len(pages)
 
-    # ====================================
-    # Normalize Locked Pages
-    # ====================================
-
     locked_pages = sorted(
         set(request.locked_pages)
     )
-
-    # ====================================
-    # Validate Locked Pages
-    # ====================================
 
     validate_locked_pages(
         locked_pages,
         total_pages
     )
-
-    # ====================================
-    # SECURITY BOUNDARY
-    #
-    # Only unlocked pages continue.
-    # ====================================
 
     unlocked_pages = [
         page
@@ -1192,10 +1284,6 @@ def summarize_document(
         if page["page_number"]
         not in locked_pages
     ]
-
-    # ====================================
-    # All Pages Locked
-    # ====================================
 
     if not unlocked_pages:
 
@@ -1208,16 +1296,6 @@ def summarize_document(
             )
         )
 
-    # ====================================
-    # Build AI Context
-    #
-    # IMPORTANT:
-    #
-    # Locked page text NEVER enters this
-    # string and therefore cannot be sent
-    # to Gemini.
-    # ====================================
-
     summary_context = "\n\n".join(
         [
             (
@@ -1229,10 +1307,6 @@ def summarize_document(
         ]
     )
 
-    # ====================================
-    # No Readable Content
-    # ====================================
-
     if not summary_context.strip():
 
         raise HTTPException(
@@ -1242,10 +1316,6 @@ def summarize_document(
                 "in the unlocked pages."
             )
         )
-
-    # ====================================
-    # Gemini Document Summary Prompt
-    # ====================================
 
     prompt = f"""
 You are LexAI, an AI-powered legal document
@@ -1333,10 +1403,6 @@ UNLOCKED DOCUMENT PAGES:
 {summary_context}
 """
 
-    # ====================================
-    # Gemini Models
-    # ====================================
-
     models_to_try = [
         "gemini-3.5-flash",
         "gemini-2.5-flash",
@@ -1344,10 +1410,6 @@ UNLOCKED DOCUMENT PAGES:
 
     summary = None
     last_error = None
-
-    # ====================================
-    # Generate Summary
-    # ====================================
 
     for model_name in models_to_try:
 
@@ -1400,10 +1462,6 @@ UNLOCKED DOCUMENT PAGES:
         if summary:
             break
 
-    # ====================================
-    # Gemini Failed
-    # ====================================
-
     if not summary:
 
         print(
@@ -1418,10 +1476,6 @@ UNLOCKED DOCUMENT PAGES:
                 "unavailable. Please try again in a moment."
             )
         )
-
-    # ====================================
-    # Return Whole Document Summary
-    # ====================================
 
     return {
         "success": True,
@@ -1449,13 +1503,6 @@ UNLOCKED DOCUMENT PAGES:
 #
 # PRIVACY:
 # Only unlocked pages are sent to Gemini.
-#
-# Returns:
-# - Overall risk score
-# - Risk level
-# - Risk summary
-# - Risky clauses
-# - Recommendations
 # ========================================
 
 @app.post("/documents/{document_id}/risk-analysis")
@@ -1465,13 +1512,13 @@ def analyze_document_risk(
     db: Session = Depends(get_db)
 ):
 
-    # ====================================
-    # Find Document
-    # ====================================
-
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -1479,10 +1526,6 @@ def analyze_document_risk(
             status_code=404,
             detail="Document not found"
         )
-
-    # ====================================
-    # Find Physical File
-    # ====================================
 
     file_path = UPLOAD_DIR / document.filename
 
@@ -1492,10 +1535,6 @@ def analyze_document_risk(
             status_code=404,
             detail="Uploaded file not found"
         )
-
-    # ====================================
-    # Extract Document Pages
-    # ====================================
 
     from document_extractor import extract_document_text
 
@@ -1528,29 +1567,14 @@ def analyze_document_risk(
 
     total_pages = len(pages)
 
-    # ====================================
-    # Normalize Locked Pages
-    # ====================================
-
     locked_pages = sorted(
         set(request.locked_pages)
     )
-
-    # ====================================
-    # Validate Locked Pages
-    # ====================================
 
     validate_locked_pages(
         locked_pages,
         total_pages
     )
-
-    # ====================================
-    # SECURITY BOUNDARY
-    #
-    # Locked pages are removed BEFORE
-    # the Gemini prompt is constructed.
-    # ====================================
 
     unlocked_pages = [
         page
@@ -1564,10 +1588,6 @@ def analyze_document_risk(
         for page in unlocked_pages
     ]
 
-    # ====================================
-    # All Pages Locked
-    # ====================================
-
     if not unlocked_pages:
 
         raise HTTPException(
@@ -1578,16 +1598,6 @@ def analyze_document_risk(
                 "before running risk analysis."
             )
         )
-
-    # ====================================
-    # Build AI Context
-    #
-    # IMPORTANT:
-    #
-    # Only unlocked pages enter this
-    # string and therefore only unlocked
-    # pages can reach Gemini.
-    # ====================================
 
     risk_context = "\n\n".join(
         [
@@ -1600,10 +1610,6 @@ def analyze_document_risk(
         ]
     )
 
-    # ====================================
-    # No Readable Content
-    # ====================================
-
     if not risk_context.strip():
 
         raise HTTPException(
@@ -1613,10 +1619,6 @@ def analyze_document_risk(
                 "in the unlocked pages."
             )
         )
-
-    # ====================================
-    # Gemini Risk Analysis Prompt
-    # ====================================
 
     prompt = f"""
 You are LexAI, an AI-powered legal document
@@ -1727,10 +1729,6 @@ UNLOCKED DOCUMENT PAGES:
 {risk_context}
 """
 
-    # ====================================
-    # Gemini Models
-    # ====================================
-
     models_to_try = [
         "gemini-3.5-flash",
         "gemini-2.5-flash",
@@ -1738,10 +1736,6 @@ UNLOCKED DOCUMENT PAGES:
 
     ai_result = None
     last_error = None
-
-    # ====================================
-    # Generate Risk Analysis
-    # ====================================
 
     for model_name in models_to_try:
 
@@ -1793,12 +1787,7 @@ UNLOCKED DOCUMENT PAGES:
                     time.sleep(1)
 
         if ai_result:
-
             break
-
-    # ====================================
-    # Gemini Failed
-    # ====================================
 
     if not ai_result:
 
@@ -1815,17 +1804,11 @@ UNLOCKED DOCUMENT PAGES:
             )
         )
 
-    # ====================================
-    # Parse Gemini JSON
-    # ====================================
-
     import json
     import re
 
     cleaned_result = ai_result.strip()
 
-    # Remove Markdown JSON fences if Gemini
-    # returns them despite the instruction.
     cleaned_result = re.sub(
         r"^```json\s*",
         "",
@@ -1854,10 +1837,6 @@ UNLOCKED DOCUMENT PAGES:
         )
 
     except json.JSONDecodeError:
-
-        # ====================================
-        # Attempt to extract JSON object
-        # ====================================
 
         try:
 
@@ -1902,10 +1881,6 @@ UNLOCKED DOCUMENT PAGES:
                 )
             )
 
-    # ====================================
-    # Normalize Risk Score
-    # ====================================
-
     try:
 
         overall_score = int(
@@ -1930,10 +1905,6 @@ UNLOCKED DOCUMENT PAGES:
         )
     )
 
-    # ====================================
-    # Normalize Risk Level
-    # ====================================
-
     risk_level = str(
         risk_data.get(
             "risk_level",
@@ -1956,20 +1927,12 @@ UNLOCKED DOCUMENT PAGES:
         else:
             risk_level = "Low"
 
-    # ====================================
-    # Normalize Summary
-    # ====================================
-
     summary = str(
         risk_data.get(
             "summary",
             "No risk summary was generated."
         )
     ).strip()
-
-    # ====================================
-    # Normalize Risks
-    # ====================================
 
     raw_risks = risk_data.get(
         "risks",
@@ -2032,8 +1995,6 @@ UNLOCKED DOCUMENT PAGES:
 
             page_number = 1
 
-        # Ensure returned page belongs to an
-        # unlocked page.
         if page_number not in analyzed_page_numbers:
 
             page_number = (
@@ -2078,10 +2039,6 @@ UNLOCKED DOCUMENT PAGES:
             }
         )
 
-    # ====================================
-    # Normalize Recommendations
-    # ====================================
-
     raw_recommendations = risk_data.get(
         "recommendations",
         []
@@ -2107,10 +2064,6 @@ UNLOCKED DOCUMENT PAGES:
             recommendations.append(
                 text
             )
-
-    # ====================================
-    # Return Risk Analysis
-    # ====================================
 
     return {
         "success": True,
@@ -2140,7 +2093,7 @@ UNLOCKED DOCUMENT PAGES:
 # PRIVACY:
 # locked_pages can be supplied as:
 #
-# /chunks/search?query=robot&locked_pages=2,4
+# /documents/3/chunks/search?query=robot&locked_pages=2,4
 #
 # Locked page chunks are NOT returned.
 # ========================================
@@ -2153,9 +2106,13 @@ def search_document_chunks(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -2171,17 +2128,9 @@ def search_document_chunks(
             detail="Search query cannot be empty"
         )
 
-    # ====================================
-    # Parse Locked Pages
-    # ====================================
-
     locked_page_numbers = parse_locked_pages(
         locked_pages
     )
-
-    # ====================================
-    # Determine Total Pages
-    # ====================================
 
     file_path = UPLOAD_DIR / document.filename
 
@@ -2200,7 +2149,7 @@ def search_document_chunks(
             file_path
         )
 
-    except Exception as error:
+    except Exception:
 
         raise HTTPException(
             status_code=500,
@@ -2214,22 +2163,19 @@ def search_document_chunks(
         total_pages
     )
 
-    # ====================================
-    # Search Chunks
-    # ====================================
-
     search_text = f"%{query.strip()}%"
 
-    chunks = db.query(DocumentChunk).filter(
-        DocumentChunk.document_id == document_id,
-        DocumentChunk.text.ilike(search_text)
-    ).order_by(
-        DocumentChunk.chunk_number
-    ).all()
-
-    # ====================================
-    # SECURITY FILTER
-    # ====================================
+    chunks = (
+        db.query(DocumentChunk)
+        .filter(
+            DocumentChunk.document_id == document_id,
+            DocumentChunk.text.ilike(search_text)
+        )
+        .order_by(
+            DocumentChunk.chunk_number
+        )
+        .all()
+    )
 
     accessible_chunks = [
         chunk
@@ -2237,10 +2183,6 @@ def search_document_chunks(
         if chunk.page_number
         not in locked_page_numbers
     ]
-
-    # ====================================
-    # Return Results
-    # ====================================
 
     return {
         "document_id": document_id,
@@ -2271,9 +2213,13 @@ def ask_document(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -2291,17 +2237,9 @@ def ask_document(
 
     user_question = request.message.strip()
 
-    # ====================================
-    # Parse Locked Pages
-    # ====================================
-
     locked_page_numbers = parse_locked_pages(
         locked_pages
     )
-
-    # ====================================
-    # Extract Document Pages
-    # ====================================
 
     file_path = UPLOAD_DIR / document.filename
 
@@ -2334,18 +2272,10 @@ def ask_document(
 
     total_pages = len(pages)
 
-    # ====================================
-    # Validate Locked Pages
-    # ====================================
-
     validate_locked_pages(
         locked_page_numbers,
         total_pages
     )
-
-    # ====================================
-    # Find Relevant Document Chunks
-    # ====================================
 
     search_words = user_question.lower().split()
 
@@ -2358,28 +2288,25 @@ def ask_document(
 
         search_text = f"%{word}%"
 
-        results = db.query(DocumentChunk).filter(
-            DocumentChunk.document_id == document_id,
-            DocumentChunk.text.ilike(search_text)
-        ).order_by(
-            DocumentChunk.chunk_number
-        ).all()
+        results = (
+            db.query(DocumentChunk)
+            .filter(
+                DocumentChunk.document_id == document_id,
+                DocumentChunk.text.ilike(search_text)
+            )
+            .order_by(
+                DocumentChunk.chunk_number
+            )
+            .all()
+        )
 
         for chunk in results:
-
-            # ====================================
-            # SECURITY CHECK
-            # ====================================
 
             if chunk.page_number in locked_page_numbers:
                 continue
 
             if chunk not in chunks:
                 chunks.append(chunk)
-
-    # ====================================
-    # No Relevant Chunks
-    # ====================================
 
     if not chunks:
 
@@ -2391,15 +2318,7 @@ def ask_document(
             )
         )
 
-    # ====================================
-    # Limit Context
-    # ====================================
-
     chunks = chunks[:5]
-
-    # ====================================
-    # Final Security Filter
-    # ====================================
 
     chunks = [
         chunk
@@ -2418,10 +2337,6 @@ def ask_document(
             )
         )
 
-    # ====================================
-    # Build Gemini Context
-    # ====================================
-
     context = "\n\n".join(
         [
             f"Page {chunk.page_number}, "
@@ -2430,10 +2345,6 @@ def ask_document(
             for chunk in chunks
         ]
     )
-
-    # ====================================
-    # Ask Gemini
-    # ====================================
 
     try:
 
@@ -2482,10 +2393,6 @@ def ask_document(
             detail="Failed to generate document answer."
         )
 
-    # ====================================
-    # Return Answer
-    # ====================================
-
     return {
         "message": (
             "Document question answered successfully "
@@ -2524,9 +2431,13 @@ def summarize_document_page(
     db: Session = Depends(get_db)
 ):
 
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id
+        )
+        .first()
+    )
 
     if document is None:
 
@@ -2539,10 +2450,6 @@ def summarize_document_page(
         set(request.locked_pages)
     )
 
-    # ====================================
-    # SECURITY CHECK
-    # ====================================
-
     if page_number in locked_pages:
 
         raise HTTPException(
@@ -2553,10 +2460,6 @@ def summarize_document_page(
             )
         )
 
-    # ====================================
-    # Physical File
-    # ====================================
-
     file_path = UPLOAD_DIR / document.filename
 
     if not file_path.exists():
@@ -2565,10 +2468,6 @@ def summarize_document_page(
             status_code=404,
             detail="Uploaded file not found"
         )
-
-    # ====================================
-    # Extract Document Pages
-    # ====================================
 
     from document_extractor import extract_document_text
 
@@ -2590,20 +2489,12 @@ def summarize_document_page(
             detail="Document extraction failed."
         )
 
-    # ====================================
-    # Validate Page Number
-    # ====================================
-
     if page_number < 1 or page_number > len(pages):
 
         raise HTTPException(
             status_code=404,
             detail="Requested page not found."
         )
-
-    # ====================================
-    # Find Requested Page
-    # ====================================
 
     selected_page = None
 
@@ -2621,10 +2512,6 @@ def summarize_document_page(
             detail="Requested page not found."
         )
 
-    # ====================================
-    # Get Page Text
-    # ====================================
-
     page_text = selected_page.get(
         "text",
         ""
@@ -2636,10 +2523,6 @@ def summarize_document_page(
             status_code=400,
             detail="No text was extracted from this page."
         )
-
-    # ====================================
-    # Ask Gemini for Summary
-    # ====================================
 
     try:
 
