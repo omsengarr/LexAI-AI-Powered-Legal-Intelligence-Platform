@@ -1,5 +1,6 @@
-const API_BASE_URL = "http://127.0.0.1:8000";
-
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://127.0.0.1:8000";
 
 // ========================================
 // Health Check
@@ -19,9 +20,8 @@ export async function healthCheck() {
   return response.json();
 }
 
-
 // ========================================
-// Get Document Count
+// Document Count
 // ========================================
 
 export async function getDocumentCount() {
@@ -38,9 +38,8 @@ export async function getDocumentCount() {
   return response.json();
 }
 
-
 // ========================================
-// Get AI Query Count
+// AI Query Count
 // ========================================
 
 export async function getAIQueryCount() {
@@ -57,7 +56,6 @@ export async function getAIQueryCount() {
   return response.json();
 }
 
-
 // ========================================
 // Upload Document
 // ========================================
@@ -67,10 +65,7 @@ export async function uploadDocument(
 ) {
   const formData = new FormData();
 
-  formData.append(
-    "file",
-    file
-  );
+  formData.append("file", file);
 
   const response = await fetch(
     `${API_BASE_URL}/upload`,
@@ -81,8 +76,7 @@ export async function uploadDocument(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -93,9 +87,8 @@ export async function uploadDocument(
   return response.json();
 }
 
-
 // ========================================
-// Get All Documents
+// Get Documents
 // ========================================
 
 export async function getDocuments() {
@@ -112,7 +105,6 @@ export async function getDocuments() {
   return response.json();
 }
 
-
 // ========================================
 // Delete Document
 // ========================================
@@ -128,8 +120,7 @@ export async function deleteDocument(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -139,7 +130,6 @@ export async function deleteDocument(
 
   return response.json();
 }
-
 
 // ========================================
 // Save AI Query
@@ -152,12 +142,9 @@ export async function saveAIQuery(
     `${API_BASE_URL}/queries`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         query: query,
       }),
@@ -165,8 +152,7 @@ export async function saveAIQuery(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -177,21 +163,27 @@ export async function saveAIQuery(
   return response.json();
 }
 
-
 // ========================================
-// Get Document Text / Pages
+// Get Document Text
+//
+// lockedPages are never returned by backend.
 // ========================================
 
 export async function getDocumentText(
-  documentId: number
+  documentId: number,
+  lockedPages: number[] = []
 ) {
+  const query =
+    lockedPages.length > 0
+      ? `?locked_pages=${lockedPages.join(",")}`
+      : "";
+
   const response = await fetch(
-    `${API_BASE_URL}/documents/${documentId}/text`
+    `${API_BASE_URL}/documents/${documentId}/text${query}`
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -202,9 +194,8 @@ export async function getDocumentText(
   return response.json();
 }
 
-
 // ========================================
-// Analyze Unlocked Document Pages
+// Analyze Selected Document Pages
 // ========================================
 
 export async function analyzeDocumentPages(
@@ -215,12 +206,9 @@ export async function analyzeDocumentPages(
     `${API_BASE_URL}/documents/${documentId}/analyze-pages`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         locked_pages: lockedPages,
       }),
@@ -228,8 +216,7 @@ export async function analyzeDocumentPages(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -240,26 +227,21 @@ export async function analyzeDocumentPages(
   return response.json();
 }
 
-
 // ========================================
-// Summarize Individual Document Page
+// Whole Document Summary
 // ========================================
 
-export async function summarizeDocumentPage(
+export async function summarizeDocument(
   documentId: number,
-  pageNumber: number,
-  lockedPages: number[] = []
+  lockedPages: number[]
 ) {
   const response = await fetch(
-    `${API_BASE_URL}/documents/${documentId}/pages/${pageNumber}/summary`,
+    `${API_BASE_URL}/documents/${documentId}/summary`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         locked_pages: lockedPages,
       }),
@@ -267,21 +249,54 @@ export async function summarizeDocumentPage(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
-        "Failed to generate page summary."
+        "Failed to generate document summary."
     );
   }
 
   return response.json();
 }
 
+// ========================================
+// AI RISK ANALYSIS
+// ========================================
+
+export async function analyzeDocumentRisk(
+  documentId: number,
+  lockedPages: number[]
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${documentId}/risk-analysis`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        locked_pages: lockedPages,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    throw new Error(
+      errorData.detail ||
+        "Failed to generate AI risk analysis."
+    );
+  }
+
+  return response.json();
+}
 
 // ========================================
 // AI Chat
+//
+// DO NOT MODIFY
 // ========================================
 
 export async function sendChatMessage(
@@ -291,12 +306,9 @@ export async function sendChatMessage(
     `${API_BASE_URL}/chat`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         message: message,
       }),
@@ -304,8 +316,7 @@ export async function sendChatMessage(
   );
 
   if (!response.ok) {
-    const errorData =
-      await response.json();
+    const errorData = await response.json();
 
     throw new Error(
       errorData.detail ||
@@ -314,4 +325,38 @@ export async function sendChatMessage(
   }
 
   return response.json();
+}
+
+
+// ========================================
+// Login
+// ========================================
+
+export async function loginUser(
+  email: string,
+  password: string
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.detail || "Login failed."
+    );
+  }
+
+  return data;
 }

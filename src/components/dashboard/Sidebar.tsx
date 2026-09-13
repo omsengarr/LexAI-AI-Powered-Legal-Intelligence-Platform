@@ -11,6 +11,7 @@ import {
   FaUser,
   FaCog,
   FaGavel,
+  FaLock,
 } from "react-icons/fa";
 
 import {
@@ -32,6 +33,12 @@ const menuItems = [
     name: "Upload Documents",
     icon: <FaUpload />,
     path: "/documents/upload",
+  },
+
+  {
+    name: "Page Lock & Analysis",
+    icon: <FaLock />,
+    path: "/documents/analyze",
   },
 
   {
@@ -85,9 +92,7 @@ const menuItems = [
 
 
 function Sidebar() {
-
   const [mobileOpen, setMobileOpen] = useState(false);
-
 
   return (
     <>
@@ -177,26 +182,30 @@ function Sidebar() {
         {/* Logo */}
         {/* ================================= */}
 
-        <div className="
-          px-6
-          py-6
-          border-b
-          border-slate-800
-        ">
+        <div
+          className="
+            px-6
+            py-6
+            border-b
+            border-slate-800
+          "
+        >
 
-          <div className="
-            flex
-            items-center
-            justify-between
-          ">
-
-
-            <div className="
+          <div
+            className="
               flex
               items-center
-              gap-4
-            ">
+              justify-between
+            "
+          >
 
+            <div
+              className="
+                flex
+                items-center
+                gap-4
+              "
+            >
 
               {/* Logo Icon */}
 
@@ -222,18 +231,22 @@ function Sidebar() {
 
               <div>
 
-                <h1 className="
-                  text-2xl
-                  font-bold
-                  text-white
-                ">
+                <h1
+                  className="
+                    text-2xl
+                    font-bold
+                    text-white
+                  "
+                >
                   LexAI
                 </h1>
 
-                <p className="
-                  text-sm
-                  text-slate-400
-                ">
+                <p
+                  className="
+                    text-sm
+                    text-slate-400
+                  "
+                >
                   Legal Intelligence Platform
                 </p>
 
@@ -257,7 +270,6 @@ function Sidebar() {
               <FaTimes size={22} />
             </button>
 
-
           </div>
 
         </div>
@@ -267,22 +279,22 @@ function Sidebar() {
         {/* Navigation */}
         {/* ================================= */}
 
-        <nav className="
-          flex-1
-          px-5
-          py-6
-          space-y-2
-          overflow-y-auto
-        ">
+        <nav
+          className="
+            flex-1
+            px-5
+            py-6
+            space-y-2
+            overflow-y-auto
+          "
+        >
 
           {menuItems.map((item) => (
 
             <NavLink
               key={item.name}
               to={item.path}
-
               onClick={() => setMobileOpen(false)}
-
               className={({ isActive }) =>
                 `
                   flex
@@ -306,19 +318,23 @@ function Sidebar() {
 
               {/* Icon */}
 
-              <span className="
-                text-xl
-                shrink-0
-              ">
+              <span
+                className="
+                  text-xl
+                  shrink-0
+                "
+              >
                 {item.icon}
               </span>
 
 
               {/* Menu Name */}
 
-              <span className="
-                font-medium
-              ">
+              <span
+                className="
+                  font-medium
+                "
+              >
                 {item.name}
               </span>
 
@@ -333,19 +349,21 @@ function Sidebar() {
         {/* User Section */}
         {/* ================================= */}
 
-        <div className="
-          border-t
-          border-slate-800
-          p-6
-        ">
+        <div
+          className="
+            border-t
+            border-slate-800
+            p-6
+          "
+        >
 
-
-          <div className="
-            flex
-            items-center
-            gap-4
-          ">
-
+          <div
+            className="
+              flex
+              items-center
+              gap-4
+            "
+          >
 
             {/* Avatar */}
 
@@ -371,17 +389,21 @@ function Sidebar() {
 
             <div>
 
-              <h3 className="
-                text-white
-                font-semibold
-              ">
+              <h3
+                className="
+                  text-white
+                  font-semibold
+                "
+              >
                 Om Sengar
               </h3>
 
-              <p className="
-                text-slate-400
-                text-sm
-              ">
+              <p
+                className="
+                  text-slate-400
+                  text-sm
+                "
+              >
                 Frontend Developer
               </p>
 
@@ -392,17 +414,17 @@ function Sidebar() {
 
           {/* Version */}
 
-          <div className="
-            mt-5
-            text-xs
-            text-slate-500
-          ">
+          <div
+            className="
+              mt-5
+              text-xs
+              text-slate-500
+            "
+          >
             LexAI v1.0.0
           </div>
 
-
         </div>
-
 
       </aside>
     </>

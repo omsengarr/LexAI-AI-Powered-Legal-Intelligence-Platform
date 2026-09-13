@@ -1,1380 +1,1386 @@
-import ReactMarkdown from "react-markdown";
 import { useEffect, useState } from "react";
-import {
-  FileText,
-  Lock,
-  Unlock,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-  AlertCircle,
-} from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 import {
+  getDocuments,
   getDocumentText,
   analyzeDocumentPages,
-  summarizeDocumentPage,
+  summarizeDocument,
 } from "../../services/api";
 
+type DocumentItem = {
+  id: number;
+  filename: string;
+  created_at?: string;
+};
 
-// ========================================
-// Types
-// ========================================
-
-interface DocumentPage {
+type PageItem = {
   page_number: number;
   text: string;
-}
+};
 
-interface DocumentData {
-  document_id: number;
-  filename: string;
-  total_pages: number;
-  pages: DocumentPage[];
-}
+type AnalysisResult = {
+  success?: boolean;
+  message?: string;
+  document_id?: number;
+  filename?: string;
+  total_pages?: number;
+  locked_pages?: number[];
+  analyzed_pages?: number[];
+  analyzed_page_count?: number;
+  analysis?: string;
+};
 
-interface PageSummary {
-  [pageNumber: number]: string;
-}
+type SummaryResult = {
+  success?: boolean;
+  message?: string;
+  document_id?: number;
+  filename?: string;
+  total_pages?: number;
+  locked_pages?: number[];
+  summarized_pages?: number[];
+  summarized_page_count?: number;
+  summary?: string;
+};
 
+export default function DocumentAnalysisPage() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] =
+    useState<number | null>(null);
 
-// ========================================
-// Component
-// ========================================
+  const [pages, setPages] = useState<PageItem[]>([]);
+  const [lockedPages, setLockedPages] = useState<number[]>([]);
 
-function DocumentAnalysisPage() {
-
-  // ======================================
-  // Document State
-  // ======================================
-
-  const [documentData, setDocumentData] =
-    useState<DocumentData | null>(null);
-
-  const [loading, setLoading] =
+  const [loadingDocuments, setLoadingDocuments] =
     useState(true);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
-
-
-  // ======================================
-  // Privacy State
-  // ======================================
-
-  const [lockedPages, setLockedPages] =
-    useState<number[]>([]);
-
-
-  // ======================================
-  // Analysis State
-  // ======================================
+  const [loadingPages, setLoadingPages] =
+    useState(false);
 
   const [analyzing, setAnalyzing] =
     useState(false);
 
+  const [summarizing, setSummarizing] =
+    useState(false);
+
   const [analysisResult, setAnalysisResult] =
-    useState<any>(null);
+    useState<AnalysisResult | null>(null);
 
+  const [summaryResult, setSummaryResult] =
+    useState<SummaryResult | null>(null);
 
-  // ======================================
-  // Page Summary State
-  // ======================================
+  const [error, setError] = useState("");
 
-  const [pageSummaries, setPageSummaries] =
-    useState<PageSummary>({});
+  const [analysisError, setAnalysisError] =
+    useState("");
 
-  const [summarizingPage, setSummarizingPage] =
-    useState<number | null>(null);
+  const [summaryError, setSummaryError] =
+    useState("");
 
-  const [summaryErrors, setSummaryErrors] =
-    useState<{
-      [pageNumber: number]: string;
-    }>({});
-
-
-  // ======================================
-  // Get Document ID
-  // ======================================
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const documentId =
-    Number(params.get("documentId"));
-
-
-  // ======================================
-  // Load Document
-  // ======================================
-
+  /*
+   * Load all uploaded documents.
+   */
   useEffect(() => {
+    loadDocuments();
+  }, []);
 
-    async function loadDocument() {
+  async function loadDocuments() {
+    try {
+      setLoadingDocuments(true);
+      setError("");
 
-      if (!documentId) {
+      const data = await getDocuments();
 
-        setErrorMessage(
-          "No document was selected."
-        );
+      /*
+       * The backend returns either:
+       *
+       * [
+       *   { id, filename, ... }
+       * ]
+       *
+       * or:
+       *
+       * { documents: [...] }
+       *
+       * Handle both formats safely.
+       */
+      const documentList = Array.isArray(data)
+        ? data
+        : data.documents || [];
 
-        setLoading(false);
+      setDocuments(documentList);
 
-        return;
+      if (
+        documentList.length > 0 &&
+        selectedDocumentId === null
+      ) {
+        setSelectedDocumentId(documentList[0].id);
       }
+    } catch (err) {
+      console.error(
+        "Failed to load documents:",
+        err
+      );
 
-      try {
-
-        setLoading(true);
-        setErrorMessage("");
-
-        const data =
-          await getDocumentText(
-            documentId
-          );
-
-        setDocumentData(data);
-
-      } catch (error) {
-
-        console.error(
-          "Failed to load document:",
-          error
-        );
-
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Failed to load document."
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load documents."
+      );
+    } finally {
+      setLoadingDocuments(false);
     }
-
-    loadDocument();
-
-  }, [documentId]);
-
-
-  // ======================================
-  // Lock / Unlock Page
-  // ======================================
-
-  function togglePageLock(
-    pageNumber: number
-  ) {
-
-    setLockedPages(
-      (previousPages) => {
-
-        const isCurrentlyLocked =
-          previousPages.includes(
-            pageNumber
-          );
-
-        if (isCurrentlyLocked) {
-
-          return previousPages.filter(
-            (page) =>
-              page !== pageNumber
-          );
-
-        }
-
-        // Remove any existing summary
-        // when page becomes locked.
-
-        setPageSummaries(
-          (previousSummaries) => {
-
-            const updated = {
-              ...previousSummaries,
-            };
-
-            delete updated[pageNumber];
-
-            return updated;
-          }
-        );
-
-        setSummaryErrors(
-          (previousErrors) => {
-
-            const updated = {
-              ...previousErrors,
-            };
-
-            delete updated[pageNumber];
-
-            return updated;
-          }
-        );
-
-        return [
-          ...previousPages,
-          pageNumber,
-        ].sort(
-          (a, b) => a - b
-        );
-
-      }
-    );
   }
 
-
-  // ======================================
-  // Generate Page Summary
-  // ======================================
-
-  async function handleSummarizePage(
-    pageNumber: number
-  ) {
-
-    if (!documentData) {
+  /*
+   * Load pages whenever the selected document changes.
+   */
+  useEffect(() => {
+    if (selectedDocumentId === null) {
+      setPages([]);
+      setLockedPages([]);
+      setAnalysisResult(null);
+      setSummaryResult(null);
       return;
     }
 
+    loadPages(selectedDocumentId);
+  }, [selectedDocumentId]);
 
-    // Do not allow locked pages
-    // to be summarized.
+  async function loadPages(documentId: number) {
+    try {
+      setLoadingPages(true);
+      setError("");
+
+      setPages([]);
+      setLockedPages([]);
+
+      setAnalysisResult(null);
+      setSummaryResult(null);
+
+      setAnalysisError("");
+      setSummaryError("");
+
+      /*
+       * Initially load the document without
+       * locked pages so that the UI can display
+       * every page.
+       */
+      const data = await getDocumentText(documentId);
+
+      setPages(data.pages || []);
+    } catch (err) {
+      console.error(
+        "Failed to load document pages:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load document pages."
+      );
+    } finally {
+      setLoadingPages(false);
+    }
+  }
+
+  /*
+   * Lock or unlock an individual page.
+   */
+  function togglePageLock(pageNumber: number) {
+    setLockedPages((currentLockedPages) => {
+      if (
+        currentLockedPages.includes(pageNumber)
+      ) {
+        return currentLockedPages.filter(
+          (page) => page !== pageNumber
+        );
+      }
+
+      return [
+        ...currentLockedPages,
+        pageNumber,
+      ].sort((a, b) => a - b);
+    });
+
+    /*
+     * Existing AI results become stale whenever
+     * the privacy configuration changes.
+     */
+    setAnalysisResult(null);
+    setSummaryResult(null);
+
+    setAnalysisError("");
+    setSummaryError("");
+  }
+
+  /*
+   * Analyze only unlocked pages.
+   */
+  async function handleAnalyzeUnlockedPages() {
+    if (selectedDocumentId === null) {
+      return;
+    }
+
+    if (pages.length === 0) {
+      setAnalysisError(
+        "There are no pages available to analyze."
+      );
+      return;
+    }
 
     if (
-      lockedPages.includes(
-        pageNumber
-      )
+      lockedPages.length === pages.length
     ) {
-
-      setSummaryErrors(
-        (previous) => ({
-          ...previous,
-          [pageNumber]:
-            "This page is locked and cannot be summarized.",
-        })
+      setAnalysisError(
+        "All pages are locked. Unlock at least one page before analyzing."
       );
-
-      return;
-    }
-
-
-    try {
-
-      setSummarizingPage(
-        pageNumber
-      );
-
-      setSummaryErrors(
-        (previous) => {
-
-          const updated = {
-            ...previous,
-          };
-
-          delete updated[pageNumber];
-
-          return updated;
-        }
-      );
-
-
-      const result =
-        await summarizeDocumentPage(
-          documentData.document_id,
-          pageNumber,
-          lockedPages
-        );
-
-
-      setPageSummaries(
-        (previous) => ({
-          ...previous,
-          [pageNumber]:
-            result.summary,
-        })
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Page summary failed:",
-        error
-      );
-
-      setSummaryErrors(
-        (previous) => ({
-          ...previous,
-          [pageNumber]:
-            error instanceof Error
-              ? error.message
-              : "Failed to generate page summary.",
-        })
-      );
-
-    } finally {
-
-      setSummarizingPage(
-        null
-      );
-
-    }
-  }
-
-
-  // ======================================
-  // Analyze Pages
-  // ======================================
-
-  async function handleAnalyze() {
-
-    if (!documentData) {
       return;
     }
 
     try {
-
       setAnalyzing(true);
-      setErrorMessage("");
+      setAnalysisError("");
       setAnalysisResult(null);
 
       const result =
         await analyzeDocumentPages(
-          documentData.document_id,
+          selectedDocumentId,
           lockedPages
         );
 
-      console.log(
-        "Analysis result:",
-        result
-      );
-
       setAnalysisResult(result);
-
-    } catch (error) {
-
+    } catch (err) {
       console.error(
-        "Analysis failed:",
-        error
+        "Document analysis failed:",
+        err
       );
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Analysis failed."
+      setAnalysisError(
+        err instanceof Error
+          ? err.message
+          : "Failed to analyze document."
       );
-
     } finally {
-
       setAnalyzing(false);
-
     }
   }
 
+  /*
+   * Generate one complete summary for the
+   * selected document using only unlocked pages.
+   */
+  async function handleSummarizeDocument() {
+    if (selectedDocumentId === null) {
+      return;
+    }
 
-  // ======================================
-  // Loading
-  // ======================================
+    if (pages.length === 0) {
+      setSummaryError(
+        "There are no pages available to summarize."
+      );
+      return;
+    }
 
-  if (loading) {
+    if (
+      lockedPages.length === pages.length
+    ) {
+      setSummaryError(
+        "All pages are locked. Unlock at least one page before generating a summary."
+      );
+      return;
+    }
 
-    return (
-      <div
-        className="
-          flex
-          min-h-[400px]
-          items-center
-          justify-center
-          text-slate-400
-        "
-      >
+    try {
+      setSummarizing(true);
+      setSummaryError("");
+      setSummaryResult(null);
 
-        <Loader2
-          size={32}
-          className="animate-spin text-cyan-400"
-        />
+      const result =
+        await summarizeDocument(
+          selectedDocumentId,
+          lockedPages
+        );
 
-        <span className="ml-3">
-          Loading document...
-        </span>
+      setSummaryResult(result);
+    } catch (err) {
+      console.error(
+        "Document summary failed:",
+        err
+      );
 
-      </div>
+      setSummaryError(
+        err instanceof Error
+          ? err.message
+          : "Failed to generate document summary."
+      );
+    } finally {
+      setSummarizing(false);
+    }
+  }
+
+  const selectedDocument =
+    documents.find(
+      (document) =>
+        document.id === selectedDocumentId
     );
 
-  }
-
-
-  // ======================================
-  // Error
-  // ======================================
-
-  if (
-    errorMessage &&
-    !documentData
-  ) {
-
-    return (
-      <div
-        className="
-          rounded-2xl
-          border
-          border-red-500/30
-          bg-red-500/10
-          p-6
-          text-red-400
-        "
-      >
-        {errorMessage}
-      </div>
-    );
-
-  }
-
-
-  if (!documentData) {
-    return null;
-  }
-
-
-  // ======================================
-  // Page
-  // ======================================
+  const unlockedPageCount =
+    pages.length - lockedPages.length;
 
   return (
-
-    <div className="w-full space-y-6">
-
-      {/* ================================= */}
-      {/* Header */}
-      {/* ================================= */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-slate-800
-          bg-gradient-to-br
-          from-slate-900
-          via-slate-900
-          to-cyan-950/30
-          p-6
-        "
-      >
-
-        <div
-          className="
-            flex
-            flex-col
-            gap-4
-            md:flex-row
-            md:items-center
-            md:justify-between
-          "
-        >
-
-          <div>
-
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-              "
-            >
-
-              <FileText
-                size={26}
-                className="text-cyan-400"
-              />
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-white
-                "
-              >
-                Document Analysis
-              </h1>
-
-            </div>
-
-            <p
-              className="
-                mt-2
-                text-slate-400
-              "
-            >
-              {documentData.filename}
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-sm
-                text-slate-500
-              "
-            >
-              {documentData.total_pages} pages
-            </p>
-
-          </div>
-
-
-          {/* Privacy Indicator */}
-
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-              rounded-xl
-              border
-              border-green-500/20
-              bg-green-500/10
-              px-4
-              py-3
-            "
-          >
-
-            <ShieldCheck
-              size={22}
-              className="text-green-400"
-            />
-
-            <div>
-
-              <p
-                className="
-                  text-sm
-                  font-semibold
-                  text-green-400
-                "
-              >
-                Privacy Protection
-              </p>
-
-              <p
-                className="
-                  text-xs
-                  text-slate-400
-                "
-              >
-                Locked pages are excluded
-                from analysis.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* ================================= */}
-      {/* Global Error */}
-      {/* ================================= */}
-
-      {errorMessage && (
-
-        <div
-          className="
-            rounded-xl
-            border
-            border-red-500/30
-            bg-red-500/10
-            px-5
-            py-4
-            text-red-400
-          "
-        >
-          {errorMessage}
-        </div>
-
-      )}
-
-
-      {/* ================================= */}
-      {/* Page Controls */}
-      {/* ================================= */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-slate-800
-          bg-slate-900
-          p-6
-        "
-      >
-
-        <div
-          className="
-            flex
-            flex-col
-            gap-4
-            md:flex-row
-            md:items-center
-            md:justify-between
-          "
-        >
-
-          <div>
-
-            <h2
-              className="
-                text-xl
-                font-semibold
-                text-white
-              "
-            >
-              Select Pages for Analysis
-            </h2>
-
-            <p
-              className="
-                mt-1
-                text-sm
-                text-slate-400
-              "
-            >
-              Lock pages containing private
-              or sensitive information.
-            </p>
-
-          </div>
-
-
-          <button
-            type="button"
-            onClick={handleAnalyze}
-            disabled={analyzing}
-            className="
-              inline-flex
-              items-center
-              justify-center
-              gap-2
-              rounded-lg
-              bg-cyan-500
-              px-6
-              py-3
-              font-semibold
-              text-white
-              transition
-              hover:bg-cyan-400
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-
-            {analyzing ? (
-
-              <>
-                <Loader2
-                  size={20}
-                  className="animate-spin"
-                />
-
-                Analyzing...
-              </>
-
-            ) : (
-
-              <>
-                <FileText size={20} />
-
-                Analyze Unlocked Pages
-              </>
-
-            )}
-
-          </button>
-
-        </div>
-
-
-        {/* Page Summary */}
-
-        <div
-          className="
-            mt-5
-            grid
-            grid-cols-1
-            gap-4
-            sm:grid-cols-3
-          "
-        >
-
-          <div
-            className="
-              rounded-xl
-              border
-              border-slate-800
-              bg-slate-950
-              p-4
-            "
-          >
-
-            <p
-              className="
-                text-sm
-                text-slate-500
-              "
-            >
-              Total Pages
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-2xl
-                font-bold
-                text-white
-              "
-            >
-              {documentData.total_pages}
-            </p>
-
-          </div>
-
-
-          <div
-            className="
-              rounded-xl
-              border
-              border-red-500/20
-              bg-red-500/5
-              p-4
-            "
-          >
-
-            <p
-              className="
-                text-sm
-                text-slate-500
-              "
-            >
-              Locked / Private
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-2xl
-                font-bold
-                text-red-400
-              "
-            >
-              {lockedPages.length}
-            </p>
-
-          </div>
-
-
-          <div
-            className="
-              rounded-xl
-              border
-              border-green-500/20
-              bg-green-500/5
-              p-4
-            "
-          >
-
-            <p
-              className="
-                text-sm
-                text-slate-500
-              "
-            >
-              Available for Analysis
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-2xl
-                font-bold
-                text-green-400
-              "
-            >
-              {documentData.total_pages -
-                lockedPages.length}
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* ================================= */}
-      {/* Pages */}
-      {/* ================================= */}
-
-      <section className="space-y-5">
-
-        {documentData.pages.map(
-          (page) => {
-
-            const isLocked =
-              lockedPages.includes(
-                page.page_number
-              );
-
-            const isSummarizing =
-              summarizingPage ===
-              page.page_number;
-
-            const summary =
-              pageSummaries[
-                page.page_number
-              ];
-
-            const summaryError =
-              summaryErrors[
-                page.page_number
-              ];
-
-
-            return (
-
-              <div
-                key={page.page_number}
-                className={`
-                  rounded-2xl
-                  border
-                  ${
-                    isLocked
-                      ? "border-red-500/30 bg-red-500/5"
-                      : "border-slate-800 bg-slate-900"
-                  }
-                  p-6
-                `}
-              >
-
-                {/* ========================= */}
-                {/* Page Header */}
-                {/* ========================= */}
-
-                <div
-                  className="
-                    flex
-                    flex-col
-                    gap-4
-                    sm:flex-row
-                    sm:items-center
-                    sm:justify-between
-                  "
-                >
-
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                    "
-                  >
-
-                    <div
-                      className="
-                        flex
-                        h-10
-                        w-10
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-lg
-                        bg-slate-800
-                        font-semibold
-                        text-white
-                      "
-                    >
-                      {page.page_number}
-                    </div>
-
-                    <div>
-
-                      <h3
-                        className="
-                          font-semibold
-                          text-white
-                        "
-                      >
-                        Page {page.page_number}
-                      </h3>
-
-                      <p
-                        className="
-                          text-xs
-                          text-slate-500
-                        "
-                      >
-                        {isLocked
-                          ? "Private — excluded from analysis"
-                          : "Available for analysis"}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-
-                  {/* Page Actions */}
-
-                  <div
-                    className="
-                      flex
-                      flex-wrap
-                      items-center
-                      gap-2
-                    "
-                  >
-
-                    {/* Summarize */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSummarizePage(
-                          page.page_number
-                        )
-                      }
-                      disabled={
-                        isLocked ||
-                        isSummarizing
-                      }
-                      className="
-                        inline-flex
-                        items-center
-                        gap-2
-                        rounded-lg
-                        bg-cyan-500/10
-                        px-4
-                        py-2
-                        text-sm
-                        font-semibold
-                        text-cyan-400
-                        transition
-                        hover:bg-cyan-500/20
-                        disabled:cursor-not-allowed
-                        disabled:opacity-40
-                      "
-                    >
-
-                      {isSummarizing ? (
-
-                        <>
-                          <Loader2
-                            size={17}
-                            className="animate-spin"
-                          />
-
-                          Summarizing...
-                        </>
-
-                      ) : (
-
-                        <>
-                          <Sparkles size={17} />
-
-                          Summarize Page
-                        </>
-
-                      )}
-
-                    </button>
-
-
-                    {/* Lock / Unlock */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        togglePageLock(
-                          page.page_number
-                        )
-                      }
-                      className={`
-                        inline-flex
-                        items-center
-                        gap-2
-                        rounded-lg
-                        px-4
-                        py-2
-                        text-sm
-                        font-semibold
-                        transition
-                        ${
-                          isLocked
-                            ? "bg-green-500/10 text-green-400 hover:bg-green-500/20"
-                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                        }
-                      `}
-                    >
-
-                      {isLocked ? (
-
-                        <>
-                          <Unlock size={17} />
-
-                          Unlock Page
-                        </>
-
-                      ) : (
-
-                        <>
-                          <Lock size={17} />
-
-                          Lock Page
-                        </>
-
-                      )}
-
-                    </button>
-
-                  </div>
-
-                </div>
-
-
-                {/* ========================= */}
-                {/* Locked Page */}
-                {/* ========================= */}
-
-                {isLocked ? (
-
-                  <div
-                    className="
-                      mt-5
-                      flex
-                      flex-col
-                      items-center
-                      justify-center
-                      rounded-xl
-                      border
-                      border-red-500/20
-                      bg-slate-950
-                      px-6
-                      py-10
-                      text-center
-                    "
-                  >
-
-                    <Lock
-                      size={32}
-                      className="text-red-400"
-                    />
-
-                    <h4
-                      className="
-                        mt-3
-                        font-semibold
-                        text-red-400
-                      "
-                    >
-                      Page Locked
-                    </h4>
-
-                    <p
-                      className="
-                        mt-1
-                        max-w-md
-                        text-sm
-                        text-slate-500
-                      "
-                    >
-                      This page contains private or
-                      sensitive information and has been
-                      excluded from AI analysis.
-                    </p>
-
-                  </div>
-
-                ) : (
-
-                  <>
-                    {/* ======================= */}
-                    {/* Page Text */}
-                    {/* ======================= */}
-
-                    <div
-                      className="
-                        mt-5
-                        max-h-80
-                        overflow-y-auto
-                        rounded-xl
-                        border
-                        border-slate-800
-                        bg-slate-950
-                        p-5
-                      "
-                    >
-
-                      <p
-                        className="
-                          whitespace-pre-wrap
-                          text-sm
-                          leading-7
-                          text-slate-300
-                        "
-                      >
-                        {page.text ||
-                          "No text extracted from this page."}
-                      </p>
-
-                    </div>
-
-
-                    {/* ======================= */}
-                    {/* Summary Error */}
-                    {/* ======================= */}
-
-                    {summaryError && (
-
-                      <div
-                        className="
-                          mt-4
-                          flex
-                          items-start
-                          gap-3
-                          rounded-xl
-                          border
-                          border-red-500/30
-                          bg-red-500/10
-                          px-4
-                          py-3
-                          text-sm
-                          text-red-400
-                        "
-                      >
-
-                        <AlertCircle
-                          size={18}
-                          className="mt-0.5 shrink-0"
-                        />
-
-                        <span>
-                          {summaryError}
-                        </span>
-
-                      </div>
-
-                    )}
-
-
-{/* ======================= */}
-{/* AI Summary */}
-{/* ======================= */}
-
-{summary && (
-
-  <div
-    className="
-      mt-5
-      rounded-xl
-      border
-      border-cyan-500/20
-      bg-cyan-500/5
-      p-5
-    "
-  >
-
-    {/* Summary Header */}
-
     <div
-      className="
-        flex
-        items-center
-        gap-2
-      "
+      style={{
+        minHeight: "100vh",
+        background: "#f8fafc",
+        padding: "32px",
+        boxSizing: "border-box",
+      }}
     >
-
-      <Sparkles
-        size={20}
-        className="text-cyan-400"
-      />
-
-      <h4
-        className="
-          font-semibold
-          text-white
-        "
-      >
-        AI Page Summary
-      </h4>
-
-    </div>
-
-
-    {/* Summary Content */}
-
-    <div
-      className="
-        mt-4
-        text-sm
-        leading-7
-        text-slate-300
-      "
-    >
-
-      <ReactMarkdown
-        components={{
-          h1: ({ children }) => (
-            <h1 className="mb-4 text-xl font-bold text-white">
-              {children}
-            </h1>
-          ),
-
-          h2: ({ children }) => (
-            <h2 className="mb-3 mt-6 text-lg font-bold text-cyan-400">
-              {children}
-            </h2>
-          ),
-
-          h3: ({ children }) => (
-            <h3 className="mb-3 mt-5 text-base font-semibold text-white">
-              {children}
-            </h3>
-          ),
-
-          p: ({ children }) => (
-            <p className="mb-4 leading-7 text-slate-300">
-              {children}
-            </p>
-          ),
-
-          ul: ({ children }) => (
-            <ul className="mb-4 ml-6 list-disc space-y-2">
-              {children}
-            </ul>
-          ),
-
-          ol: ({ children }) => (
-            <ol className="mb-4 ml-6 list-decimal space-y-2">
-              {children}
-            </ol>
-          ),
-
-          li: ({ children }) => (
-            <li className="pl-1 text-slate-300">
-              {children}
-            </li>
-          ),
-
-          strong: ({ children }) => (
-            <strong className="font-semibold text-white">
-              {children}
-            </strong>
-          ),
-
-          hr: () => (
-            <hr className="my-6 border-slate-700" />
-          ),
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
         }}
       >
-        {summary}
-      </ReactMarkdown>
+        {/* PAGE HEADER */}
 
-    </div>
-
-  </div>
-
-)}
-                   </>
-
-                )}
-
-              </div>
-
-            );
-
-          }
-        )}
-
-      </section>
-
-      {/* ================================= */}
-      {/* Analysis Result */}
-      {/* ================================= */}
-
-      {analysisResult && (
-
-        <section
-          className="
-            rounded-2xl
-            border
-            border-cyan-500/20
-            bg-cyan-500/5
-            p-6
-          "
+        <div
+          style={{
+            marginBottom: "28px",
+          }}
         >
-
-          <h2
-            className="
-              text-xl
-              font-semibold
-              text-white
-            "
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "30px",
+              fontWeight: 700,
+              color: "#0f172a",
+            }}
           >
-            Selected Pages
-          </h2>
+            Page Lock & Analysis
+          </h1>
 
           <p
-            className="
-              mt-2
-              text-slate-400
-            "
+            style={{
+              marginTop: "8px",
+              marginBottom: 0,
+              color: "#64748b",
+              fontSize: "15px",
+            }}
           >
-            The backend received only the pages
-            that were not locked.
+            Lock private pages before sending document
+            content to LexAI for AI analysis.
           </p>
+        </div>
 
+        {/* ERROR */}
+
+        {error && (
           <div
-            className="
-              mt-5
-              flex
-              flex-wrap
-              gap-2
-            "
+            style={{
+              marginBottom: "20px",
+              padding: "14px 16px",
+              borderRadius: "10px",
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              color: "#991b1b",
+            }}
           >
+            {error}
+          </div>
+        )}
 
-            {analysisResult.analyzed_pages?.map(
-              (pageNumber: number) => (
+        {/* DOCUMENT SELECTOR */}
 
-                <span
-                  key={pageNumber}
-                  className="
-                    rounded-lg
-                    bg-green-500/10
-                    px-3
-                    py-2
-                    text-sm
-                    font-medium
-                    text-green-400
-                  "
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            padding: "22px",
+            marginBottom: "24px",
+            boxShadow:
+              "0 1px 3px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          <label
+            htmlFor="document-select"
+            style={{
+              display: "block",
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#334155",
+              marginBottom: "8px",
+            }}
+          >
+            Select Document
+          </label>
+
+          {loadingDocuments ? (
+            <div
+              style={{
+                color: "#64748b",
+                fontSize: "14px",
+              }}
+            >
+              Loading documents...
+            </div>
+          ) : documents.length === 0 ? (
+            <div
+              style={{
+                padding: "16px",
+                borderRadius: "10px",
+                background: "#f8fafc",
+                color: "#64748b",
+                fontSize: "14px",
+              }}
+            >
+              No documents have been uploaded yet.
+            </div>
+          ) : (
+            <select
+              id="document-select"
+              value={
+                selectedDocumentId ?? ""
+              }
+              onChange={(event) =>
+                setSelectedDocumentId(
+                  Number(event.target.value)
+                )
+              }
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                color: "#0f172a",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            >
+              {documents.map((document) => (
+                <option
+                  key={document.id}
+                  value={document.id}
                 >
-                  Page {pageNumber}
-                </span>
+                  {document.filename}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
 
-              )
+        {/* SELECTED DOCUMENT */}
+
+        {selectedDocument && (
+          <>
+            {/* DOCUMENT HEADER */}
+
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
+                padding: "22px",
+                marginBottom: "24px",
+                boxShadow:
+                  "0 1px 3px rgba(15, 23, 42, 0.06)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  alignItems: "flex-start",
+                  gap: "20px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <h2
+                    style={{
+                      margin: 0,
+                      color: "#0f172a",
+                      fontSize: "22px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedDocument.filename}
+                  </h2>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "18px",
+                      flexWrap: "wrap",
+                      marginTop: "10px",
+                      fontSize: "14px",
+                      color: "#64748b",
+                    }}
+                  >
+                    <span>
+                      {pages.length}{" "}
+                      {pages.length === 1
+                        ? "page"
+                        : "pages"}
+                    </span>
+
+                    <span>
+                      {unlockedPageCount} unlocked
+                    </span>
+
+                    <span>
+                      {lockedPages.length} locked
+                    </span>
+                  </div>
+                </div>
+
+                {/* DOCUMENT-LEVEL ACTIONS */}
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={
+                      handleSummarizeDocument
+                    }
+                    disabled={
+                      summarizing ||
+                      analyzing ||
+                      loadingPages ||
+                      pages.length === 0 ||
+                      lockedPages.length ===
+                        pages.length
+                    }
+                    style={{
+                      border: "none",
+                      borderRadius: "9px",
+                      padding:
+                        "11px 16px",
+                      background:
+                        summarizing ||
+                        analyzing ||
+                        loadingPages ||
+                        pages.length === 0 ||
+                        lockedPages.length ===
+                          pages.length
+                          ? "#94a3b8"
+                          : "#0f766e",
+                      color: "#ffffff",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      cursor:
+                        summarizing ||
+                        analyzing ||
+                        loadingPages ||
+                        pages.length === 0 ||
+                        lockedPages.length ===
+                          pages.length
+                          ? "not-allowed"
+                          : "pointer",
+                    }}
+                  >
+                    {summarizing
+                      ? "Summarizing..."
+                      : "Summarize Document"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleAnalyzeUnlockedPages
+                    }
+                    disabled={
+                      analyzing ||
+                      summarizing ||
+                      loadingPages ||
+                      pages.length === 0 ||
+                      lockedPages.length ===
+                        pages.length
+                    }
+                    style={{
+                      border: "none",
+                      borderRadius: "9px",
+                      padding:
+                        "11px 16px",
+                      background:
+                        analyzing ||
+                        summarizing ||
+                        loadingPages ||
+                        pages.length === 0 ||
+                        lockedPages.length ===
+                          pages.length
+                          ? "#94a3b8"
+                          : "#2563eb",
+                      color: "#ffffff",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      cursor:
+                        analyzing ||
+                        summarizing ||
+                        loadingPages ||
+                        pages.length === 0 ||
+                        lockedPages.length ===
+                          pages.length
+                          ? "not-allowed"
+                          : "pointer",
+                    }}
+                  >
+                    {analyzing
+                      ? "Analyzing..."
+                      : "Analyze Unlocked Pages"}
+                  </button>
+                </div>
+              </div>
+
+              {/* PRIVACY STATUS */}
+
+              <div
+                style={{
+                  marginTop: "18px",
+                  padding: "13px 15px",
+                  borderRadius: "10px",
+                  background:
+                    lockedPages.length > 0
+                      ? "#fff7ed"
+                      : "#f0fdf4",
+                  border:
+                    lockedPages.length > 0
+                      ? "1px solid #fed7aa"
+                      : "1px solid #bbf7d0",
+                  color:
+                    lockedPages.length > 0
+                      ? "#9a3412"
+                      : "#166534",
+                  fontSize: "14px",
+                  lineHeight: 1.5,
+                }}
+              >
+                {lockedPages.length > 0 ? (
+                  <>
+                    <strong>
+                      Privacy protection active:
+                    </strong>{" "}
+                    {lockedPages.length}{" "}
+                    {lockedPages.length === 1
+                      ? "page is"
+                      : "pages are"}{" "}
+                    locked and will be excluded
+                    from AI analysis and document
+                    summarization.
+                  </>
+                ) : (
+                  <>
+                    <strong>
+                      No pages are locked.
+                    </strong>{" "}
+                    All pages are currently available
+                    for AI analysis and summarization.
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* PAGE LIST */}
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "18px",
+              }}
+            >
+              {loadingPages ? (
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "28px",
+                    textAlign: "center",
+                    color: "#64748b",
+                  }}
+                >
+                  Loading document pages...
+                </div>
+              ) : pages.length === 0 ? (
+                <div
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "14px",
+                    padding: "28px",
+                    textAlign: "center",
+                    color: "#64748b",
+                  }}
+                >
+                  No readable pages were found in
+                  this document.
+                </div>
+              ) : (
+                pages.map((page) => {
+                  const isLocked =
+                    lockedPages.includes(
+                      page.page_number
+                    );
+
+                  return (
+                    <div
+                      key={page.page_number}
+                      style={{
+                        background: "#ffffff",
+                        border: isLocked
+                          ? "1px solid #fecaca"
+                          : "1px solid #e2e8f0",
+                        borderRadius: "14px",
+                        overflow: "hidden",
+                        boxShadow:
+                          "0 1px 3px rgba(15, 23, 42, 0.05)",
+                      }}
+                    >
+                      {/* PAGE HEADER */}
+
+                      <div
+                        style={{
+                          padding:
+                            "16px 18px",
+                          borderBottom:
+                            "1px solid #e2e8f0",
+                          display: "flex",
+                          justifyContent:
+                            "space-between",
+                          alignItems:
+                            "center",
+                          gap: "12px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems:
+                              "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "18px",
+                            }}
+                          >
+                            {isLocked
+                              ? "🔒"
+                              : "🔓"}
+                          </span>
+
+                          <h3
+                            style={{
+                              margin: 0,
+                              fontSize: "17px",
+                              fontWeight: 700,
+                              color:
+                                "#0f172a",
+                            }}
+                          >
+                            Page{" "}
+                            {page.page_number}
+                          </h3>
+
+                          {isLocked && (
+                            <span
+                              style={{
+                                fontSize:
+                                  "12px",
+                                fontWeight:
+                                  600,
+                                color:
+                                  "#991b1b",
+                                background:
+                                  "#fee2e2",
+                                padding:
+                                  "4px 8px",
+                                borderRadius:
+                                  "999px",
+                              }}
+                            >
+                              Private
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            togglePageLock(
+                              page.page_number
+                            )
+                          }
+                          style={{
+                            border: "none",
+                            borderRadius:
+                              "8px",
+                            padding:
+                              "9px 13px",
+                            background:
+                              isLocked
+                                ? "#dcfce7"
+                                : "#fee2e2",
+                            color:
+                              isLocked
+                                ? "#166534"
+                                : "#991b1b",
+                            fontWeight: 600,
+                            fontSize:
+                              "13px",
+                            cursor:
+                              "pointer",
+                          }}
+                        >
+                          {isLocked
+                            ? "Unlock Page"
+                            : "Lock Page"}
+                        </button>
+                      </div>
+
+                      {/* PAGE CONTENT */}
+
+                      {isLocked ? (
+                        <div
+                          style={{
+                            padding:
+                              "30px 20px",
+                            textAlign:
+                              "center",
+                            background:
+                              "#fef2f2",
+                            color:
+                              "#991b1b",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize:
+                                "28px",
+                              marginBottom:
+                                "8px",
+                            }}
+                          >
+                            🔒
+                          </div>
+
+                          <div
+                            style={{
+                              fontWeight:
+                                700,
+                              marginBottom:
+                                "4px",
+                            }}
+                          >
+                            Private page
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize:
+                                "13px",
+                              color:
+                                "#b91c1c",
+                            }}
+                          >
+                            Excluded from AI
+                            analysis and
+                            summarization
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            padding:
+                              "20px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              whiteSpace:
+                                "pre-wrap",
+                              lineHeight:
+                                1.7,
+                              fontSize:
+                                "14px",
+                              color:
+                                "#334155",
+                              maxHeight:
+                                "420px",
+                              overflowY:
+                                "auto",
+                              background:
+                                "#f8fafc",
+                              border:
+                                "1px solid #e2e8f0",
+                              borderRadius:
+                                "10px",
+                              padding:
+                                "16px",
+                              boxSizing:
+                                "border-box",
+                            }}
+                          >
+                            {page.text?.trim()
+                              ? page.text
+                              : "No readable text was extracted from this page."}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* SUMMARY ERROR */}
+
+            {summaryError && (
+              <div
+                style={{
+                  marginTop: "24px",
+                  padding: "14px 16px",
+                  borderRadius: "10px",
+                  background: "#fee2e2",
+                  border:
+                    "1px solid #fecaca",
+                  color: "#991b1b",
+                }}
+              >
+                <strong>
+                  Summary error:
+                </strong>{" "}
+                {summaryError}
+              </div>
             )}
 
-          </div>
+            {/* DOCUMENT SUMMARY */}
 
-        </section>
+            {summaryResult?.summary && (
+              <div
+                style={{
+                  marginTop: "24px",
+                  background: "#ffffff",
+                  border:
+                    "1px solid #99f6e4",
+                  borderRadius: "14px",
+                  padding: "24px",
+                  boxShadow:
+                    "0 1px 3px rgba(15, 23, 42, 0.06)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent:
+                      "space-between",
+                    alignItems:
+                      "flex-start",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                    marginBottom:
+                      "18px",
+                  }}
+                >
+                  <div>
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: "22px",
+                        fontWeight: 700,
+                        color:
+                          "#134e4a",
+                      }}
+                    >
+                      AI Document Summary
+                    </h2>
 
-      )}
+                    <p
+                      style={{
+                        marginTop:
+                          "7px",
+                        marginBottom: 0,
+                        color:
+                          "#64748b",
+                        fontSize:
+                          "13px",
+                      }}
+                    >
+                      Generated using only
+                      unlocked pages.
+                    </p>
+                  </div>
 
+                  {summaryResult.summarized_page_count !==
+                    undefined && (
+                    <div
+                      style={{
+                        padding:
+                          "8px 12px",
+                        borderRadius:
+                          "999px",
+                        background:
+                          "#ccfbf1",
+                        color:
+                          "#115e59",
+                        fontSize:
+                          "12px",
+                        fontWeight:
+                          600,
+                      }}
+                    >
+                      {
+                        summaryResult.summarized_page_count
+                      }{" "}
+                      pages analyzed
+                    </div>
+                  )}
+                </div>
+
+                {/* PRIVACY CONFIRMATION */}
+
+                <div
+                  style={{
+                    marginBottom:
+                      "18px",
+                    padding:
+                      "12px 14px",
+                    borderRadius:
+                      "9px",
+                    background:
+                      "#f0fdfa",
+                    border:
+                      "1px solid #ccfbf1",
+                    color:
+                      "#115e59",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  🔐 Locked pages were excluded
+                  from this summary.
+                  {summaryResult.locked_pages &&
+                    summaryResult.locked_pages
+                      .length > 0 && (
+                      <>
+                        {" "}
+                        Locked pages:{" "}
+                        {summaryResult.locked_pages.join(
+                          ", "
+                        )}
+                        .
+                      </>
+                    )}
+                </div>
+
+                {/* MARKDOWN SUMMARY */}
+
+                <div
+                  style={{
+                    color: "#334155",
+                    fontSize: "15px",
+                    lineHeight: 1.75,
+                  }}
+                >
+                  <ReactMarkdown
+                    components={{
+                      h1: ({
+                        children,
+                      }) => (
+                        <h1
+                          style={{
+                            color:
+                              "#0f172a",
+                            fontSize:
+                              "25px",
+                            marginTop:
+                              "10px",
+                            marginBottom:
+                              "14px",
+                          }}
+                        >
+                          {children}
+                        </h1>
+                      ),
+
+                      h2: ({
+                        children,
+                      }) => (
+                        <h2
+                          style={{
+                            color:
+                              "#134e4a",
+                            fontSize:
+                              "20px",
+                            marginTop:
+                              "24px",
+                            marginBottom:
+                              "10px",
+                          }}
+                        >
+                          {children}
+                        </h2>
+                      ),
+
+                      h3: ({
+                        children,
+                      }) => (
+                        <h3
+                          style={{
+                            color:
+                              "#334155",
+                            fontSize:
+                              "17px",
+                            marginTop:
+                              "18px",
+                            marginBottom:
+                              "8px",
+                          }}
+                        >
+                          {children}
+                        </h3>
+                      ),
+
+                      p: ({
+                        children,
+                      }) => (
+                        <p
+                          style={{
+                            marginTop:
+                              "8px",
+                            marginBottom:
+                              "12px",
+                          }}
+                        >
+                          {children}
+                        </p>
+                      ),
+
+                      ul: ({
+                        children,
+                      }) => (
+                        <ul
+                          style={{
+                            paddingLeft:
+                              "24px",
+                            marginTop:
+                              "8px",
+                            marginBottom:
+                              "14px",
+                          }}
+                        >
+                          {children}
+                        </ul>
+                      ),
+
+                      ol: ({
+                        children,
+                      }) => (
+                        <ol
+                          style={{
+                            paddingLeft:
+                              "24px",
+                            marginTop:
+                              "8px",
+                            marginBottom:
+                              "14px",
+                          }}
+                        >
+                          {children}
+                        </ol>
+                      ),
+
+                      li: ({
+                        children,
+                      }) => (
+                        <li
+                          style={{
+                            marginBottom:
+                              "7px",
+                          }}
+                        >
+                          {children}
+                        </li>
+                      ),
+
+                      strong: ({
+                        children,
+                      }) => (
+                        <strong
+                          style={{
+                            color:
+                              "#0f172a",
+                          }}
+                        >
+                          {children}
+                        </strong>
+                      ),
+
+                      blockquote: ({
+                        children,
+                      }) => (
+                        <blockquote
+                          style={{
+                            margin:
+                              "16px 0",
+                            padding:
+                              "10px 16px",
+                            borderLeft:
+                              "4px solid #14b8a6",
+                            background:
+                              "#f0fdfa",
+                            color:
+                              "#475569",
+                          }}
+                        >
+                          {children}
+                        </blockquote>
+                      ),
+                    }}
+                  >
+                    {summaryResult.summary}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+            {/* ANALYSIS ERROR */}
+
+            {analysisError && (
+              <div
+                style={{
+                  marginTop: "24px",
+                  padding: "14px 16px",
+                  borderRadius: "10px",
+                  background: "#fee2e2",
+                  border:
+                    "1px solid #fecaca",
+                  color: "#991b1b",
+                }}
+              >
+                <strong>
+                  Analysis error:
+                </strong>{" "}
+                {analysisError}
+              </div>
+            )}
+
+            {/* ANALYSIS RESULT */}
+
+            {analysisResult?.analysis && (
+              <div
+                style={{
+                  marginTop: "24px",
+                  background: "#ffffff",
+                  border:
+                    "1px solid #bfdbfe",
+                  borderRadius: "14px",
+                  padding: "24px",
+                  boxShadow:
+                    "0 1px 3px rgba(15, 23, 42, 0.06)",
+                }}
+              >
+                <div
+                  style={{
+                    marginBottom:
+                      "18px",
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      color:
+                        "#1e3a8a",
+                    }}
+                  >
+                    AI Analysis
+                  </h2>
+
+                  <p
+                    style={{
+                      marginTop:
+                        "7px",
+                      marginBottom: 0,
+                      color:
+                        "#64748b",
+                      fontSize:
+                        "13px",
+                    }}
+                  >
+                    Analysis generated using
+                    only unlocked pages.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    marginBottom:
+                      "18px",
+                    padding:
+                      "12px 14px",
+                    borderRadius:
+                      "9px",
+                    background:
+                      "#eff6ff",
+                    border:
+                      "1px solid #dbeafe",
+                    color:
+                      "#1e40af",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  🔐 Locked pages were excluded
+                  from this analysis.
+                  {analysisResult.locked_pages &&
+                    analysisResult.locked_pages
+                      .length > 0 && (
+                      <>
+                        {" "}
+                        Locked pages:{" "}
+                        {analysisResult.locked_pages.join(
+                          ", "
+                        )}
+                        .
+                      </>
+                    )}
+                </div>
+
+                <div
+                  style={{
+                    color:
+                      "#334155",
+                    fontSize:
+                      "15px",
+                    lineHeight:
+                      1.75,
+                  }}
+                >
+                  <ReactMarkdown>
+                    {analysisResult.analysis}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
-
-
-export default DocumentAnalysisPage;

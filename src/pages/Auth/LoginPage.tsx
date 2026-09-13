@@ -7,6 +7,8 @@ import AuthLayout from "../../layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 
+import { loginUser } from "../../services/api";
+
 function LoginPage() {
   const navigate = useNavigate();
 
@@ -16,19 +18,19 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-
   // ========================================
   // Handle Login
   // ========================================
 
-  function handleLogin(
+  async function handleLogin(
     event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
     setError("");
 
-    if (!email || !password) {
+    // Check email and password
+    if (!email.trim() || !password.trim()) {
       setError(
         "Please enter your email and password."
       );
@@ -38,12 +40,19 @@ function LoginPage() {
 
     setLoading(true);
 
+    try {
+      // ========================================
+      // Backend Authentication
+      // ========================================
 
-    // ========================================
-    // Temporary Frontend Authentication
-    // ========================================
+      const data = await loginUser(
+        email,
+        password
+      );
 
-    setTimeout(() => {
+      // ========================================
+      // Store Login Information
+      // ========================================
 
       localStorage.setItem(
         "lexai_authenticated",
@@ -52,18 +61,39 @@ function LoginPage() {
 
       localStorage.setItem(
         "lexai_user_email",
-        email
+        data.user.email
       );
 
-      setLoading(false);
+      localStorage.setItem(
+        "lexai_user_id",
+        String(data.user.id)
+      );
+
+      localStorage.setItem(
+        "lexai_user_role",
+        data.user.role
+      );
+
+      // ========================================
+      // Go To Dashboard
+      // ========================================
 
       navigate("/dashboard", {
         replace: true,
       });
 
-    }, 500);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError(
+          "Login failed. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   }
-
 
   // ========================================
   // Page
@@ -74,12 +104,10 @@ function LoginPage() {
       title="Welcome Back"
       subtitle="Login to continue using LexAI"
     >
-
       <form
         onSubmit={handleLogin}
         className="space-y-5"
       >
-
         {/* Email */}
 
         <Input
@@ -92,7 +120,6 @@ function LoginPage() {
             setEmail(event.target.value)
           }
         />
-
 
         {/* Password */}
 
@@ -107,11 +134,9 @@ function LoginPage() {
           }
         />
 
-
         {/* Forgot Password */}
 
         <div className="flex justify-end">
-
           <Link
             to="#"
             className="
@@ -122,14 +147,11 @@ function LoginPage() {
           >
             Forgot Password?
           </Link>
-
         </div>
-
 
         {/* Error */}
 
         {error && (
-
           <div
             className="
               rounded-lg
@@ -144,9 +166,7 @@ function LoginPage() {
           >
             {error}
           </div>
-
         )}
-
 
         {/* Login Button */}
 
@@ -160,11 +180,9 @@ function LoginPage() {
             : "Login"}
         </Button>
 
-
         {/* Signup */}
 
         <p className="text-center text-slate-400">
-
           Don't have an account?{" "}
 
           <Link
@@ -176,11 +194,8 @@ function LoginPage() {
           >
             Sign Up
           </Link>
-
         </p>
-
       </form>
-
     </AuthLayout>
   );
 }

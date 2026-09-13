@@ -1,15 +1,84 @@
 import { useState } from "react";
 
 function ProfilePage() {
-  const [fullName, setFullName] = useState("LexAI User");
-  const [email, setEmail] = useState("user@lexai.com");
-  const [role, setRole] = useState("Legal Researcher");
-  const [organization, setOrganization] = useState("LexAI");
+  // ========================================
+  // Logged-in User Information
+  // ========================================
+
+  const storedEmail =
+    localStorage.getItem("lexai_user_email") || "";
+
+  const storedRole =
+    localStorage.getItem("lexai_user_role") || "client";
+
+  const storedProfile =
+    localStorage.getItem("lexai_profile");
+
+  let savedProfile: {
+    fullName?: string;
+    email?: string;
+    role?: string;
+    organization?: string;
+  } = {};
+
+  if (storedProfile) {
+    try {
+      savedProfile = JSON.parse(storedProfile);
+    } catch {
+      savedProfile = {};
+    }
+  }
+
+  // ========================================
+  // Role Display Name
+  // ========================================
+
+  function getRoleName(userRole: string) {
+    switch (userRole) {
+      case "admin":
+        return "Administrator";
+
+      case "lawyer":
+        return "Lawyer";
+
+      case "legal_researcher":
+        return "Legal Researcher";
+
+      case "client":
+        return "Client";
+
+      default:
+        return userRole;
+    }
+  }
+
+  // ========================================
+  // Profile State
+  // ========================================
+
+  const [fullName, setFullName] = useState(
+    savedProfile.fullName || "LexAI User"
+  );
+
+  const [email] = useState(
+    storedEmail || savedProfile.email || ""
+  );
+
+  const [role] = useState(
+    getRoleName(storedRole)
+  );
+
+  const [organization, setOrganization] = useState(
+    savedProfile.organization || "LexAI"
+  );
 
   const [saved, setSaved] = useState(false);
 
+  // ========================================
+  // Save Profile
+  // ========================================
+
   const handleSave = () => {
-    // Save profile information locally for now.
     localStorage.setItem(
       "lexai_profile",
       JSON.stringify({
@@ -26,6 +95,10 @@ function ProfilePage() {
       setSaved(false);
     }, 3000);
   };
+
+  // ========================================
+  // Render
+  // ========================================
 
   return (
     <main className="p-8 space-y-8">
@@ -92,7 +165,9 @@ function ProfilePage() {
             <input
               type="text"
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) =>
+                setFullName(e.target.value)
+              }
               className="
                 w-full
                 bg-slate-950
@@ -118,7 +193,7 @@ function ProfilePage() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              readOnly
               className="
                 w-full
                 bg-slate-950
@@ -127,11 +202,15 @@ function ProfilePage() {
                 rounded-xl
                 px-4
                 py-3
-                text-white
+                text-slate-400
+                cursor-not-allowed
                 focus:outline-none
-                focus:border-cyan-500
               "
             />
+
+            <p className="text-xs text-slate-500 mt-2">
+              Email is linked to your LexAI account.
+            </p>
           </div>
 
 
@@ -144,7 +223,7 @@ function ProfilePage() {
             <input
               type="text"
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              readOnly
               className="
                 w-full
                 bg-slate-950
@@ -153,11 +232,15 @@ function ProfilePage() {
                 rounded-xl
                 px-4
                 py-3
-                text-white
+                text-slate-400
+                cursor-not-allowed
                 focus:outline-none
-                focus:border-cyan-500
               "
             />
+
+            <p className="text-xs text-slate-500 mt-2">
+              Your role is assigned by LexAI.
+            </p>
           </div>
 
 
@@ -170,7 +253,9 @@ function ProfilePage() {
             <input
               type="text"
               value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
+              onChange={(e) =>
+                setOrganization(e.target.value)
+              }
               className="
                 w-full
                 bg-slate-950
@@ -186,6 +271,48 @@ function ProfilePage() {
             />
           </div>
 
+        </div>
+
+
+        {/* Account Information */}
+        <div
+          className="
+            mt-8
+            rounded-xl
+            border
+            border-slate-800
+            bg-slate-950
+            p-5
+          "
+        >
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Account Information
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div>
+              <p className="text-xs text-slate-500">
+                Account Email
+              </p>
+
+              <p className="text-sm text-slate-300 mt-1">
+                {email}
+              </p>
+            </div>
+
+
+            <div>
+              <p className="text-xs text-slate-500">
+                Account Role
+              </p>
+
+              <p className="text-sm text-cyan-400 mt-1">
+                {role}
+              </p>
+            </div>
+
+          </div>
         </div>
 
 

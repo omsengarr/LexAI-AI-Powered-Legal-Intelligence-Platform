@@ -201,7 +201,9 @@ function DocumentList({
       !date.includes("+") &&
       !/[+-]\d{2}:\d{2}$/.test(date)
     ) {
+
       dateString = `${date}Z`;
+
     }
 
 
@@ -489,7 +491,9 @@ function DocumentList({
     <div className="space-y-4">
 
 
-      {/* Error while documents exist */}
+      {/* ==================================
+          Error while documents exist
+          ================================== */}
 
       {error && (
 
@@ -518,7 +522,9 @@ function DocumentList({
       )}
 
 
-      {/* Document Cards */}
+      {/* ==================================
+          Document Cards
+          ================================== */}
 
       {documents.map(
         (document) => {
@@ -553,7 +559,10 @@ function DocumentList({
               "
             >
 
-              {/* Left Side */}
+
+              {/* =================================
+                   Left Side
+                   ================================= */}
 
               <div
                 className="
@@ -635,19 +644,24 @@ function DocumentList({
               </div>
 
 
-              {/* Right Side */}
+              {/* =================================
+                   Right Side
+                   ================================= */}
 
               <div
                 className="
                   flex
+                  flex-wrap
                   items-center
                   justify-between
-                  gap-4
+                  gap-3
                   sm:justify-end
                 "
               >
 
-                {/* Upload Date + Time */}
+                {/* =================================
+                     Upload Date + Time
+                     ================================= */}
 
                 <div
                   className="
@@ -658,9 +672,9 @@ function DocumentList({
 
                   <div
                     className="
+                      mb-1
                       text-xs
                       text-slate-500
-                      mb-1
                     "
                   >
 
@@ -684,7 +698,9 @@ function DocumentList({
                 </div>
 
 
-                {/* Delete */}
+                {/* =================================
+                     Delete
+                     ================================= */}
 
                 <button
                   type="button"
@@ -745,5 +761,6 @@ function DocumentList({
 
   );
 }
+
 
 export default DocumentList;

@@ -34,3 +34,4 @@ backend/uploads/
 # Environment variables
 .env
 .env.*
+!.env.example

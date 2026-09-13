@@ -5,6 +5,44 @@ from database import Base
 
 
 # ========================================
+# User Model
+# ========================================
+
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    email = Column(
+        String,
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    password = Column(
+        String,
+        nullable=False
+    )
+
+    role = Column(
+        String,
+        nullable=False,
+        default="client"
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+
+# ========================================
 # Document Model
 # ========================================
 
@@ -110,6 +148,7 @@ class Case(Base):
         DateTime,
         default=datetime.utcnow
     )
+
 
 # ========================================
 # Document Chunk Model
