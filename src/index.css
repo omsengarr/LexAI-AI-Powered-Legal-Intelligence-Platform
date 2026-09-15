@@ -4,16 +4,6 @@
    LEXAI GLOBAL THEME
    ========================================================= */
 
-/*
-   Dark mode is the default.
-
-   Light mode is activated by adding:
-
-   html.light
-
-   to the document root.
-*/
-
 html,
 body,
 #root {
@@ -22,6 +12,7 @@ body,
 
 html {
   background: #020617;
+  color-scheme: dark;
 }
 
 body {
@@ -34,13 +25,13 @@ body {
     color 0.25s ease;
 }
 
-
 /* =========================================================
-   LIGHT MODE
+   LIGHT MODE ROOT
    ========================================================= */
 
 html.light {
   background: #f8fafc;
+  color-scheme: light;
 }
 
 html.light body {
@@ -48,9 +39,75 @@ html.light body {
   color: #0f172a;
 }
 
+/* =========================================================
+   AUTH PAGES
+   =========================================================
+
+   Authentication is intentionally independent of the
+   workspace theme.
+
+   Login + Signup remain premium dark screens even when
+   the user previously selected Light Mode.
+*/
+
+html.light .lexai-auth-page {
+  background: #020617 !important;
+  color: #f8fafc !important;
+}
+
+html.light .lexai-auth-page .lexai-auth-card {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html.light .lexai-auth-page .text-white {
+  color: #ffffff !important;
+}
+
+html.light .lexai-auth-page .text-slate-50 {
+  color: #f8fafc !important;
+}
+
+html.light .lexai-auth-page .text-slate-100 {
+  color: #f1f5f9 !important;
+}
+
+html.light .lexai-auth-page .text-slate-200 {
+  color: #e2e8f0 !important;
+}
+
+html.light .lexai-auth-page .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+html.light .lexai-auth-page .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.light .lexai-auth-page .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.light .lexai-auth-page .text-slate-600 {
+  color: #475569 !important;
+}
+
+html.light .lexai-auth-page input,
+html.light .lexai-auth-page textarea,
+html.light .lexai-auth-page select {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.light .lexai-auth-page input::placeholder,
+html.light .lexai-auth-page textarea::placeholder {
+  color: #64748b !important;
+}
 
 /* =========================================================
-   MAIN BACKGROUNDS
+   LIGHT MODE — MAIN SURFACES
    ========================================================= */
 
 html.light .bg-slate-950 {
@@ -69,10 +126,133 @@ html.light .bg-slate-700 {
   background-color: #e2e8f0 !important;
 }
 
+html.light .bg-slate-600 {
+  background-color: #cbd5e1 !important;
+}
 
 /* =========================================================
-   BORDERS
+   LIGHT MODE — TRANSPARENT SLATE SURFACES
    ========================================================= */
+
+html.light .bg-slate-950\/95 {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+}
+
+html.light .bg-slate-950\/90 {
+  background-color: rgba(248, 250, 252, 0.90) !important;
+}
+
+html.light .bg-slate-950\/80 {
+  background-color: rgba(248, 250, 252, 0.80) !important;
+}
+
+html.light .bg-slate-950\/70 {
+  background-color: rgba(248, 250, 252, 0.70) !important;
+}
+
+html.light .bg-slate-950\/60 {
+  background-color: rgba(248, 250, 252, 0.60) !important;
+}
+
+html.light .bg-slate-950\/50 {
+  background-color: rgba(248, 250, 252, 0.50) !important;
+}
+
+html.light .bg-slate-950\/40 {
+  background-color: rgba(248, 250, 252, 0.40) !important;
+}
+
+html.light .bg-slate-950\/30 {
+  background-color: rgba(248, 250, 252, 0.30) !important;
+}
+
+html.light .bg-slate-900\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+html.light .bg-slate-900\/90 {
+  background-color: rgba(255, 255, 255, 0.90) !important;
+}
+
+html.light .bg-slate-900\/80 {
+  background-color: rgba(255, 255, 255, 0.80) !important;
+}
+
+html.light .bg-slate-900\/70 {
+  background-color: rgba(255, 255, 255, 0.70) !important;
+}
+
+html.light .bg-slate-900\/60 {
+  background-color: rgba(255, 255, 255, 0.60) !important;
+}
+
+html.light .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.50) !important;
+}
+
+html.light .bg-slate-900\/40 {
+  background-color: rgba(255, 255, 255, 0.40) !important;
+}
+
+html.light .bg-slate-800\/90 {
+  background-color: rgba(241, 245, 249, 0.90) !important;
+}
+
+html.light .bg-slate-800\/80 {
+  background-color: rgba(241, 245, 249, 0.80) !important;
+}
+
+html.light .bg-slate-800\/70 {
+  background-color: rgba(241, 245, 249, 0.70) !important;
+}
+
+html.light .bg-slate-800\/60 {
+  background-color: rgba(241, 245, 249, 0.60) !important;
+}
+
+html.light .bg-slate-800\/50 {
+  background-color: rgba(241, 245, 249, 0.50) !important;
+}
+
+html.light .bg-slate-800\/40 {
+  background-color: rgba(241, 245, 249, 0.40) !important;
+}
+
+html.light .bg-slate-800\/30 {
+  background-color: rgba(241, 245, 249, 0.30) !important;
+}
+
+/* =========================================================
+   LIGHT MODE — HARD-CODED DARK SURFACES
+   =========================================================
+
+   These correspond to the actual arbitrary Tailwind
+   background colors used throughout the dashboard.
+*/
+
+html.light [class*="bg-[#030712]"] {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html.light [class*="bg-[#070d18]"] {
+  background-color: #ffffff !important;
+}
+
+html.light [class*="bg-[#050a12]"] {
+  background-color: #ffffff !important;
+}
+
+html.light [class*="bg-[#080d18]"] {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+}
+
+/* =========================================================
+   LIGHT MODE — BORDERS
+   ========================================================= */
+
+html.light .border-slate-900 {
+  border-color: #e2e8f0 !important;
+}
 
 html.light .border-slate-800 {
   border-color: #e2e8f0 !important;
@@ -86,9 +266,26 @@ html.light .border-slate-600 {
   border-color: #cbd5e1 !important;
 }
 
+html.light .border-slate-500 {
+  border-color: #94a3b8 !important;
+}
+
+/* Handle opacity borders */
+
+html.light [class*="border-slate-800/"] {
+  border-color: #e2e8f0 !important;
+}
+
+html.light [class*="border-slate-700/"] {
+  border-color: #cbd5e1 !important;
+}
+
+html.light [class*="border-slate-600/"] {
+  border-color: #cbd5e1 !important;
+}
 
 /* =========================================================
-   TEXT
+   LIGHT MODE — TEXT
    ========================================================= */
 
 html.light .text-white {
@@ -123,10 +320,25 @@ html.light .text-slate-600 {
   color: #475569 !important;
 }
 
+html.light .text-slate-700 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-800 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-900 {
+  color: #0f172a !important;
+}
 
 /* =========================================================
-   HOVER BACKGROUNDS
+   LIGHT MODE — HOVER BACKGROUNDS
    ========================================================= */
+
+html.light .hover\:bg-slate-950:hover {
+  background-color: #f1f5f9 !important;
+}
 
 html.light .hover\:bg-slate-900:hover {
   background-color: #f8fafc !important;
@@ -140,22 +352,36 @@ html.light .hover\:bg-slate-700:hover {
   background-color: #cbd5e1 !important;
 }
 
+html.light .hover\:bg-slate-600:hover {
+  background-color: #94a3b8 !important;
+}
 
 /* =========================================================
-   HOVER BORDERS
+   LIGHT MODE — HOVER TEXT
    ========================================================= */
 
-html.light .hover\:border-slate-700:hover {
-  border-color: #cbd5e1 !important;
+html.light .hover\:text-white:hover {
+  color: #0f172a !important;
 }
 
-html.light .hover\:border-slate-600:hover {
-  border-color: #94a3b8 !important;
+html.light .hover\:text-slate-100:hover {
+  color: #1e293b !important;
 }
 
+html.light .hover\:text-slate-200:hover {
+  color: #334155 !important;
+}
+
+html.light .hover\:text-slate-300:hover {
+  color: #475569 !important;
+}
+
+html.light .hover\:text-slate-400:hover {
+  color: #64748b !important;
+}
 
 /* =========================================================
-   INPUTS / SELECTS / TEXTAREAS
+   LIGHT MODE — INPUTS
    ========================================================= */
 
 html.light input,
@@ -166,74 +392,25 @@ html.light select {
   border-color: #cbd5e1;
 }
 
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #22d3ee;
+}
+
 html.light input::placeholder,
 html.light textarea::placeholder {
   color: #94a3b8;
 }
 
+html.light option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
 
 /* =========================================================
-   SEMI-TRANSPARENT SLATE BACKGROUNDS
+   LIGHT MODE — GRADIENTS
    ========================================================= */
-
-html.light .bg-slate-950\/80 {
-  background-color: rgba(248, 250, 252, 0.80) !important;
-}
-
-html.light .bg-slate-950\/60 {
-  background-color: rgba(248, 250, 252, 0.60) !important;
-}
-
-html.light .bg-slate-950\/50 {
-  background-color: rgba(248, 250, 252, 0.50) !important;
-}
-
-html.light .bg-slate-900\/80 {
-  background-color: rgba(255, 255, 255, 0.80) !important;
-}
-
-html.light .bg-slate-900\/60 {
-  background-color: rgba(255, 255, 255, 0.60) !important;
-}
-
-html.light .bg-slate-800\/80 {
-  background-color: rgba(241, 245, 249, 0.80) !important;
-}
-
-
-/* =========================================================
-   LIGHT MODE - GRADIENT PANELS
-   ========================================================= */
-
-/*
-   Dashboard, Upload Documents and AI Chat use
-   bg-gradient-to-br together with slate colors.
-
-   The following changes the dark gradient into
-   a clean light gradient.
-*/
-
-html.light .bg-gradient-to-br {
-  background-image: linear-gradient(
-    135deg,
-    #ffffff 0%,
-    #f8fafc 55%,
-    #e2e8f0 100%
-  ) !important;
-}
-
-
-/* =========================================================
-   LIGHT MODE - GRADIENT COLOR STOPS
-   ========================================================= */
-
-/*
-   Tailwind gradient utilities generate background-image
-   using CSS variables.
-
-   These rules ensure the existing dark slate gradient
-   stops become light in Light Mode.
-*/
 
 html.light .from-slate-950 {
   --tw-gradient-from: #ffffff !important;
@@ -250,8 +427,12 @@ html.light .from-slate-800 {
   --tw-gradient-to: rgb(241 245 249 / 0) !important;
 }
 
+html.light .from-slate-700 {
+  --tw-gradient-from: #e2e8f0 !important;
+  --tw-gradient-to: rgb(226 232 240 / 0) !important;
+}
+
 html.light .via-slate-950 {
-  --tw-gradient-to: rgb(248 250 252 / 0) !important;
   --tw-gradient-stops:
     var(--tw-gradient-from),
     #f8fafc,
@@ -259,7 +440,6 @@ html.light .via-slate-950 {
 }
 
 html.light .via-slate-900 {
-  --tw-gradient-to: rgb(248 250 252 / 0) !important;
   --tw-gradient-stops:
     var(--tw-gradient-from),
     #f8fafc,
@@ -267,7 +447,6 @@ html.light .via-slate-900 {
 }
 
 html.light .via-slate-800 {
-  --tw-gradient-to: rgb(241 245 249 / 0) !important;
   --tw-gradient-stops:
     var(--tw-gradient-from),
     #f1f5f9,
@@ -286,10 +465,17 @@ html.light .to-slate-800 {
   --tw-gradient-to: #cbd5e1 !important;
 }
 
-
 /* =========================================================
-   LIGHT MODE - SHADOWS
+   LIGHT MODE — SHADOWS
    ========================================================= */
+
+html.light .shadow-sm {
+  --tw-shadow-color: rgba(15, 23, 42, 0.06);
+}
+
+html.light .shadow-md {
+  --tw-shadow-color: rgba(15, 23, 42, 0.08);
+}
 
 html.light .shadow-lg {
   --tw-shadow-color: rgba(15, 23, 42, 0.10);
@@ -303,10 +489,13 @@ html.light .shadow-2xl {
   --tw-shadow-color: rgba(15, 23, 42, 0.12);
 }
 
-
 /* =========================================================
-   SCROLLBARS
+   LIGHT MODE — SCROLLBAR
    ========================================================= */
+
+html.light {
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
 
 html.light ::-webkit-scrollbar {
   width: 8px;
@@ -326,9 +515,17 @@ html.light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
+/* =========================================================
+   LIGHT MODE — SELECTION
+   ========================================================= */
+
+html.light ::selection {
+  background: rgba(34, 211, 238, 0.20);
+  color: #0f172a;
+}
 
 /* =========================================================
-   TRANSITIONS
+   GLOBAL TRANSITIONS
    ========================================================= */
 
 * {

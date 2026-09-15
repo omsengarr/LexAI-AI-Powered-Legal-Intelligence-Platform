@@ -1,841 +1,910 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   ChevronDown,
-  User,
+  Command,
+  FileText,
+  LogOut,
+  Search,
   Settings,
   ShieldCheck,
-  LogOut,
-  UserCircle,
-  Search,
-  FileText,
-  Scale,
+  User,
   X,
 } from "lucide-react";
 
-// ==========================================
-// SEARCH DATA
-// ==========================================
+interface TopbarProps {
+  children?: ReactNode;
+}
 
-const searchItems = [
+interface SearchItem {
+  title: string;
+  description: string;
+  path: string;
+  icon: ReactNode;
+}
+
+const searchItems: SearchItem[] = [
   {
-    title: "Employment Agreement",
-    type: "Document",
-    category: "Contract",
+    title: "Dashboard",
+    description: "Overview of your legal intelligence workspace",
+    path: "/dashboard",
+    icon: <ShieldCheck size={16} />,
   },
   {
-    title: "Property Dispute Case",
-    type: "Case",
-    category: "Civil Law",
+    title: "Documents",
+    description: "Upload and manage legal documents",
+    path: "/documents",
+    icon: <FileText size={16} />,
   },
   {
-    title: "Non-Disclosure Agreement",
-    type: "Document",
-    category: "Contract",
+    title: "AI Chat",
+    description: "Ask questions about your legal data",
+    path: "/chat",
+    icon: <Command size={16} />,
   },
   {
-    title: "Intellectual Property Rights",
-    type: "Case",
-    category: "IP Law",
+    title: "Case Search",
+    description: "Search and manage your cases",
+    path: "/cases",
+    icon: <Search size={16} />,
   },
   {
-    title: "Privacy Policy Compliance",
-    type: "Document",
-    category: "Compliance",
+    title: "Risk Analysis",
+    description: "Analyze legal risks and exposure",
+    path: "/risk-analysis",
+    icon: <ShieldCheck size={16} />,
   },
   {
-    title: "Consumer Protection Act",
-    type: "Case",
-    category: "Consumer Law",
+    title: "Compliance",
+    description: "Review compliance requirements",
+    path: "/compliance",
+    icon: <ShieldCheck size={16} />,
   },
   {
-    title: "Contract Risk Assessment",
-    type: "Document",
-    category: "Risk Analysis",
+    title: "Analytics",
+    description: "View legal intelligence analytics",
+    path: "/analytics",
+    icon: <Command size={16} />,
   },
   {
-    title: "High Risk Legal Clause",
-    type: "Document",
-    category: "Risk Analysis",
+    title: "Judgment Comparison",
+    description: "Compare legal judgments",
+    path: "/comparison",
+    icon: <FileText size={16} />,
   },
   {
-    title: "Corporate Compliance Risk Report",
-    type: "Report",
-    category: "Risk Analysis",
+    title: "Profile",
+    description: "Manage your profile",
+    path: "/profile",
+    icon: <User size={16} />,
   },
   {
-    title: "Legal Risk Analysis Case",
-    type: "Case",
-    category: "Risk Management",
+    title: "Settings",
+    description: "Manage application settings",
+    path: "/settings",
+    icon: <Settings size={16} />,
   },
 ];
 
-// ==========================================
-// TOPBAR
-// ==========================================
-
-function Topbar() {
+function Topbar({ children }: TopbarProps) {
   const navigate = useNavigate();
 
-  const [notificationOpen, setNotificationOpen] =
-    useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const [profileOpen, setProfileOpen] =
-    useState(false);
-
-  const [searchQuery, setSearchQuery] =
-    useState("");
-
-  // ==========================================
-  // GET USER EMAIL
-  // ==========================================
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const notificationRef = useRef<HTMLDivElement | null>(null);
+  const profileRef = useRef<HTMLDivElement | null>(null);
 
   const userEmail =
-    localStorage.getItem("lexai_user_email") ||
-    "Legal AI User";
+    localStorage.getItem("lexai_user_email") || "admin@lexai.demo";
 
-  // ==========================================
-  // LOGOUT
-  // ==========================================
+  const filteredSearchItems =
+    searchQuery.trim().length === 0
+      ? searchItems.slice(0, 5)
+      : searchItems.filter((item) => {
+          const query = searchQuery.toLowerCase();
 
-  function handleLogout() {
+          return (
+            item.title.toLowerCase().includes(query) ||
+            item.description.toLowerCase().includes(query)
+          );
+        });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(target)
+      ) {
+        setIsSearchFocused(false);
+      }
+
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(target)
+      ) {
+        setIsNotificationOpen(false);
+      }
+
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSearchFocused(false);
+        setIsNotificationOpen(false);
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+
+        const input = searchRef.current?.querySelector(
+          "input"
+        ) as HTMLInputElement | null;
+
+        input?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleShortcut);
+
+    return () => {
+      document.removeEventListener("keydown", handleShortcut);
+    };
+  }, []);
+
+  const handleSearchSelect = (path: string) => {
+    setSearchQuery("");
+    setIsSearchFocused(false);
+    navigate(path);
+  };
+
+  const handleLogout = () => {
     localStorage.removeItem("lexai_authenticated");
     localStorage.removeItem("lexai_user_email");
 
-    setProfileOpen(false);
+    setIsProfileOpen(false);
 
-    navigate("/login", {
-      replace: true,
-    });
-  }
+    navigate("/login");
+  };
 
-  // ==========================================
-  // SEARCH FILTER
-  // ==========================================
+  const toggleNotification = () => {
+    setIsNotificationOpen((current) => !current);
+    setIsProfileOpen(false);
+  };
 
-  const filteredResults =
-    searchQuery.trim() === ""
-      ? []
-      : searchItems.filter((item) =>
-          `${item.title} ${item.type} ${item.category}`
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
-        );
+  const toggleProfile = () => {
+    setIsProfileOpen((current) => !current);
+    setIsNotificationOpen(false);
+  };
 
   return (
-    <div
+    <header
       className="
+        sticky
+        top-0
+        z-40
         h-20
-        bg-slate-950
         border-b
-        border-slate-800
-        flex
-        items-center
-        justify-between
-        px-6
-        gap-6
+        border-slate-800/70
+        bg-slate-950/75
+        backdrop-blur-xl
       "
     >
-
-      {/* ====================================== */}
-      {/* SEARCH SECTION */}
-      {/* ====================================== */}
-
-      <div
-        className="
-          relative
-          flex-1
-          max-w-xl
-        "
-      >
-        <div className="relative">
-
-          <Search
-            size={19}
-            className="
-              absolute
-              left-4
-              top-1/2
-              -translate-y-1/2
-              text-slate-500
-            "
-          />
-
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) =>
-              setSearchQuery(e.target.value)
-            }
-            placeholder="Search legal documents, cases..."
-            className="
-              bg-slate-900
-              border
-              border-slate-800
-              rounded-xl
-              pl-11
-              pr-10
-              py-2.5
-              text-white
-              placeholder-slate-500
-              w-full
-              outline-none
-              focus:border-cyan-500
-              transition
-            "
-          />
-
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="
-                absolute
-                right-3
-                top-1/2
-                -translate-y-1/2
-                text-slate-500
-                hover:text-white
-                transition
-              "
-              aria-label="Clear search"
-            >
-              <X size={18} />
-            </button>
-          )}
-
+      <div className="flex h-full items-center gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Left side / optional children */}
+        <div className="flex min-w-0 flex-1 items-center">
+          {children}
         </div>
 
-        {/* ====================================== */}
-        {/* SEARCH RESULTS */}
-        {/* ====================================== */}
-
-        {searchQuery && (
+        {/* Search */}
+        <div
+          ref={searchRef}
+          className="
+            relative
+            hidden
+            w-full
+            max-w-md
+            lg:block
+          "
+        >
           <div
-            className="
-              absolute
-              left-0
-              right-0
-              top-14
-              bg-slate-900
-              border
-              border-slate-800
+            className={`
+              flex
+              h-11
+              items-center
+              gap-3
               rounded-xl
-              shadow-2xl
-              p-2
-              z-50
-            "
+              border
+              px-3
+              transition-all
+              ${
+                isSearchFocused
+                  ? "border-cyan-400/40 bg-slate-900/70 shadow-lg shadow-cyan-500/5"
+                  : "border-slate-800/80 bg-slate-950/60"
+              }
+            `}
           >
+            <Search
+              size={17}
+              className="shrink-0 text-slate-500"
+            />
 
-            {filteredResults.length > 0 ? (
-              <>
-                <div
-                  className="
-                    px-3
-                    py-2
-                    text-xs
-                    text-slate-500
-                    uppercase
-                    tracking-wider
-                  "
-                >
-                  Search Results
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              placeholder="Search anything..."
+              className="
+                min-w-0
+                flex-1
+                bg-transparent
+                text-sm
+                text-slate-100
+                outline-none
+                placeholder:text-slate-500
+              "
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="
+                  rounded-md
+                  p-1
+                  text-slate-500
+                  transition
+                  hover:bg-slate-800/60
+                  hover:text-slate-300
+                "
+                aria-label="Clear search"
+              >
+                <X size={15} />
+              </button>
+            )}
+
+            <div
+              className="
+                hidden
+                items-center
+                gap-1
+                rounded-md
+                border
+                border-slate-800
+                bg-slate-900/80
+                px-2
+                py-1
+                text-[10px]
+                font-medium
+                text-slate-500
+                xl:flex
+              "
+            >
+              <Command size={11} />
+              <span>K</span>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {isSearchFocused && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="
+                  absolute
+                  left-0
+                  right-0
+                  top-[calc(100%+10px)]
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-slate-800
+                  bg-slate-900/95
+                  shadow-2xl
+                  shadow-black/30
+                  backdrop-blur-xl
+                "
+              >
+                <div className="border-b border-slate-800 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Quick Search
+                  </p>
                 </div>
 
-                <div className="space-y-1">
-
-                  {filteredResults.map(
-                    (item, index) => (
+                <div className="max-h-80 overflow-y-auto p-2">
+                  {filteredSearchItems.length > 0 ? (
+                    filteredSearchItems.map((item) => (
                       <button
+                        key={item.path}
                         type="button"
-                        key={index}
+                        onClick={() => handleSearchSelect(item.path)}
                         className="
-                          w-full
                           flex
+                          w-full
                           items-center
                           gap-3
+                          rounded-xl
                           px-3
                           py-3
-                          rounded-lg
-                          hover:bg-slate-800
-                          transition
                           text-left
+                          transition
+                          hover:bg-slate-800/60
                         "
                       >
-
                         <div
                           className="
-                            w-9
-                            h-9
-                            rounded-lg
-                            bg-cyan-500/10
-                            text-cyan-400
                             flex
+                            h-9
+                            w-9
+                            shrink-0
                             items-center
                             justify-center
-                            shrink-0
+                            rounded-lg
+                            border
+                            border-slate-800
+                            bg-slate-950/70
+                            text-slate-400
                           "
                         >
-                          {item.type === "Document" ||
-                          item.type === "Report" ? (
-                            <FileText size={18} />
-                          ) : (
-                            <Scale size={18} />
-                          )}
+                          {item.icon}
                         </div>
 
-                        <div className="flex-1">
-
-                          <p
-                            className="
-                              text-white
-                              text-sm
-                              font-medium
-                            "
-                          >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-200">
                             {item.title}
                           </p>
 
-                          <p
-                            className="
-                              text-slate-500
-                              text-xs
-                              mt-1
-                            "
-                          >
-                            {item.type} • {item.category}
+                          <p className="mt-0.5 truncate text-xs text-slate-500">
+                            {item.description}
                           </p>
-
                         </div>
-
                       </button>
-                    )
+                    ))
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <Search
+                        size={22}
+                        className="mx-auto text-slate-600"
+                      />
+
+                      <p className="mt-3 text-sm font-medium text-slate-400">
+                        No results found
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-600">
+                        Try another search term.
+                      </p>
+                    </div>
                   )}
-
                 </div>
-              </>
-            ) : (
-              <div
-                className="
-                  px-4
-                  py-6
-                  text-center
-                "
-              >
-
-                <Search
-                  size={24}
-                  className="
-                    mx-auto
-                    text-slate-600
-                    mb-2
-                  "
-                />
-
-                <p
-                  className="
-                    text-slate-400
-                    text-sm
-                  "
-                >
-                  No results found
-                </p>
-
-                <p
-                  className="
-                    text-slate-600
-                    text-xs
-                    mt-1
-                  "
-                >
-                  Try another search term
-                </p>
-
-              </div>
+              </motion.div>
             )}
-
-          </div>
-        )}
-
-      </div>
-
-      {/* ====================================== */}
-      {/* RIGHT SECTION */}
-      {/* ====================================== */}
-
-      <div
-        className="
-          flex
-          items-center
-          gap-5
-        "
-      >
-
-        {/* ====================================== */}
-        {/* NOTIFICATIONS */}
-        {/* ====================================== */}
-
-        <div className="relative">
-
-          <button
-            type="button"
-            onClick={() =>
-              setNotificationOpen(
-                !notificationOpen
-              )
-            }
-            className="
-              relative
-              text-slate-300
-              hover:text-white
-              transition
-            "
-            aria-label="Notifications"
-          >
-
-            <Bell size={24} />
-
-            <span
-              className="
-                absolute
-                -top-2
-                -right-2
-                bg-red-500
-                text-white
-                text-xs
-                rounded-full
-                h-5
-                w-5
-                flex
-                items-center
-                justify-center
-              "
-            >
-              3
-            </span>
-
-          </button>
-
-          {/* Notification Dropdown */}
-
-          {notificationOpen && (
-            <div
-              className="
-                absolute
-                right-0
-                top-12
-                w-80
-                bg-slate-900
-                border
-                border-slate-800
-                rounded-xl
-                shadow-2xl
-                p-4
-                z-50
-              "
-            >
-
-              <div
-                className="
-                  flex
-                  items-center
-                  justify-between
-                  mb-4
-                "
-              >
-
-                <h3
-                  className="
-                    text-white
-                    font-semibold
-                  "
-                >
-                  Notifications
-                </h3>
-
-                <span
-                  className="
-                    text-xs
-                    text-cyan-400
-                  "
-                >
-                  3 new
-                </span>
-
-              </div>
-
-              <div
-                className="
-                  bg-slate-800
-                  rounded-lg
-                  p-3
-                  hover:bg-slate-700
-                  transition
-                  cursor-pointer
-                "
-              >
-                <p
-                  className="
-                    text-white
-                    text-sm
-                    font-medium
-                  "
-                >
-                  Document analysis completed
-                </p>
-
-                <p
-                  className="
-                    text-slate-400
-                    text-xs
-                    mt-1
-                  "
-                >
-                  Your uploaded document has
-                  been analyzed.
-                </p>
-              </div>
-
-              <div
-                className="
-                  bg-slate-800
-                  rounded-lg
-                  p-3
-                  hover:bg-slate-700
-                  transition
-                  cursor-pointer
-                  mt-3
-                "
-              >
-                <p
-                  className="
-                    text-white
-                    text-sm
-                    font-medium
-                  "
-                >
-                  Risk alert detected
-                </p>
-
-                <p
-                  className="
-                    text-slate-400
-                    text-xs
-                    mt-1
-                  "
-                >
-                  Risk detected in Case #1024.
-                </p>
-              </div>
-
-              <div
-                className="
-                  bg-slate-800
-                  rounded-lg
-                  p-3
-                  hover:bg-slate-700
-                  transition
-                  cursor-pointer
-                  mt-3
-                "
-              >
-                <p
-                  className="
-                    text-white
-                    text-sm
-                    font-medium
-                  "
-                >
-                  AI report generated
-                </p>
-
-                <p
-                  className="
-                    text-slate-400
-                    text-xs
-                    mt-1
-                  "
-                >
-                  Your legal intelligence report
-                  is ready.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="
-                  w-full
-                  mt-4
-                  text-sm
-                  text-cyan-400
-                  hover:text-cyan-300
-                  transition
-                "
-              >
-                View all notifications
-              </button>
-
-            </div>
-          )}
-
+          </AnimatePresence>
         </div>
 
-        {/* ====================================== */}
-        {/* PROFILE */}
-        {/* ====================================== */}
-
-        <div className="relative">
-
-          <button
-            type="button"
-            onClick={() =>
-              setProfileOpen(!profileOpen)
-            }
+        {/* Right side */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* System status */}
+          <div
             className="
-              flex
+              hidden
               items-center
-              gap-3
-              cursor-pointer
-              hover:bg-slate-900
+              gap-2
               rounded-xl
+              border
+              border-slate-800
+              bg-slate-950/60
               px-3
               py-2
-              transition
+              xl:flex
             "
           >
-
-            <div
-              className="
-                bg-cyan-500/20
-                p-2
-                rounded-full
-                text-cyan-400
-              "
-            >
-              <User size={22} />
-            </div>
-
-            <div className="text-left">
-
-              <p
+            <span className="relative flex h-2 w-2">
+              <span
                 className="
-                  text-white
-                  text-sm
-                  font-medium
-                "
-              >
-                Om Sengar
-              </p>
-
-              <p
-                className="
-                  text-slate-400
-                  text-xs
-                  truncate
-                  max-w-[180px]
-                "
-              >
-                {userEmail}
-              </p>
-
-            </div>
-
-            <ChevronDown
-              size={18}
-              className="text-slate-400"
-            />
-
-          </button>
-
-          {/* ================================= */}
-          {/* PROFILE DROPDOWN */}
-          {/* ================================= */}
-
-          {profileOpen && (
-            <div
-              className="
-                absolute
-                right-0
-                top-14
-                w-64
-                bg-slate-900
-                border
-                border-slate-800
-                rounded-xl
-                shadow-2xl
-                p-2
-                z-50
-              "
-            >
-
-              {/* Profile Header */}
-
-              <div
-                className="
-                  px-3
-                  py-3
-                  border-b
-                  border-slate-800
-                  mb-2
-                "
-              >
-
-                <p
-                  className="
-                    text-white
-                    font-semibold
-                  "
-                >
-                  Om Sengar
-                </p>
-
-                <p
-                  className="
-                    text-slate-400
-                    text-xs
-                    mt-1
-                    truncate
-                  "
-                >
-                  {userEmail}
-                </p>
-
-              </div>
-
-              {/* My Profile */}
-
-              <button
-                type="button"
-                onClick={() => navigate("/profile")}
-                className="
+                  absolute
+                  inline-flex
+                  h-full
                   w-full
-                  flex
-                  items-center
-                  gap-3
-                  px-3
-                  py-3
-                  text-slate-300
-                  hover:text-white
-                  hover:bg-slate-800
-                  rounded-lg
-                  transition
-                  text-left
-                "
-              >
-
-                <UserCircle size={19} />
-
-                <span>
-                  My Profile
-                </span>
-
-              </button>
-
-              {/* Settings */}
-
-              <button
-                type="button"
-                className="
-                  w-full
-                  flex
-                  items-center
-                  gap-3
-                  px-3
-                  py-3
-                  text-slate-300
-                  hover:text-white
-                  hover:bg-slate-800
-                  rounded-lg
-                  transition
-                  text-left
-                "
-              >
-
-                <Settings size={19} />
-
-                <span>
-                  Settings
-                </span>
-
-              </button>
-
-              {/* Security */}
-
-              <button
-                type="button"
-                className="
-                  w-full
-                  flex
-                  items-center
-                  gap-3
-                  px-3
-                  py-3
-                  text-slate-300
-                  hover:text-white
-                  hover:bg-slate-800
-                  rounded-lg
-                  transition
-                  text-left
-                "
-              >
-
-                <ShieldCheck size={19} />
-
-                <span>
-                  Security
-                </span>
-
-              </button>
-
-              {/* Divider */}
-
-              <div
-                className="
-                  border-t
-                  border-slate-800
-                  my-2
+                  animate-ping
+                  rounded-full
+                  bg-emerald-400
+                  opacity-60
                 "
               />
 
-              {/* Logout */}
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
 
-              <button
-                type="button"
-                onClick={handleLogout}
+            <span className="text-xs font-medium text-slate-400">
+              Systems operational
+            </span>
+          </div>
+
+          {/* Notifications */}
+          <div ref={notificationRef} className="relative">
+            <button
+              type="button"
+              onClick={toggleNotification}
+              className="
+                relative
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-slate-800
+                bg-slate-950/60
+                text-slate-400
+                transition
+                hover:bg-slate-800/60
+                hover:text-slate-200
+              "
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+
+              <span
                 className="
-                  w-full
+                  absolute
+                  right-2
+                  top-2
+                  h-2
+                  w-2
+                  rounded-full
+                  border-2
+                  border-slate-950
+                  bg-cyan-400
+                "
+              />
+            </button>
+
+            <AnimatePresence>
+              {isNotificationOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                  className="
+                    absolute
+                    right-0
+                    top-[calc(100%+10px)]
+                    w-[340px]
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-slate-800
+                    bg-slate-900/95
+                    shadow-2xl
+                    shadow-black/30
+                    backdrop-blur-xl
+                  "
+                >
+                  <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-200">
+                        Notifications
+                      </p>
+
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Latest workspace updates
+                      </p>
+                    </div>
+
+                    <span
+                      className="
+                        rounded-full
+                        border
+                        border-cyan-400/20
+                        bg-cyan-400/10
+                        px-2
+                        py-1
+                        text-[10px]
+                        font-semibold
+                        text-cyan-300
+                      "
+                    >
+                      2 new
+                    </span>
+                  </div>
+
+                  <div className="p-2">
+                    <button
+                      type="button"
+                      className="
+                        flex
+                        w-full
+                        items-start
+                        gap-3
+                        rounded-xl
+                        p-3
+                        text-left
+                        transition
+                        hover:bg-slate-800/60
+                      "
+                    >
+                      <div
+                        className="
+                          mt-0.5
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-lg
+                          bg-cyan-400/10
+                          text-cyan-300
+                        "
+                      >
+                        <FileText size={16} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-200">
+                          Document processing complete
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Your latest legal document is ready for analysis.
+                        </p>
+
+                        <p className="mt-2 text-[10px] font-medium text-slate-600">
+                          Just now
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="
+                        flex
+                        w-full
+                        items-start
+                        gap-3
+                        rounded-xl
+                        p-3
+                        text-left
+                        transition
+                        hover:bg-slate-800/60
+                      "
+                    >
+                      <div
+                        className="
+                          mt-0.5
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-lg
+                          bg-emerald-400/10
+                          text-emerald-300
+                        "
+                      >
+                        <ShieldCheck size={16} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-200">
+                          Risk analysis updated
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          New insights are available in your risk analysis.
+                        </p>
+
+                        <p className="mt-2 text-[10px] font-medium text-slate-600">
+                          12 min ago
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="border-t border-slate-800 p-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNotificationOpen(false);
+                        navigate("/dashboard");
+                      }}
+                      className="
+                        w-full
+                        rounded-xl
+                        px-3
+                        py-2
+                        text-xs
+                        font-semibold
+                        text-cyan-300
+                        transition
+                        hover:bg-cyan-400/10
+                      "
+                    >
+                      View workspace
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Profile */}
+          <div ref={profileRef} className="relative">
+            <button
+              type="button"
+              onClick={toggleProfile}
+              className="
+                flex
+                items-center
+                gap-2
+                rounded-xl
+                border
+                border-slate-800
+                bg-slate-950/60
+                px-2
+                py-1.5
+                transition
+                hover:bg-slate-800/60
+              "
+            >
+              <div
+                className="
                   flex
+                  h-8
+                  w-8
                   items-center
-                  gap-3
-                  px-3
-                  py-3
-                  text-red-400
-                  hover:text-red-300
-                  hover:bg-slate-800
+                  justify-center
                   rounded-lg
-                  transition
-                  text-left
+                  bg-gradient-to-br
+                  from-cyan-400
+                  to-blue-500
+                  text-xs
+                  font-bold
+                  text-white
+                  shadow-lg
+                  shadow-cyan-500/10
                 "
               >
+                {userEmail.charAt(0).toUpperCase()}
+              </div>
 
-                <LogOut size={19} />
+              <div className="hidden max-w-[130px] text-left md:block">
+                <p className="truncate text-xs font-semibold text-slate-200">
+                  {userEmail}
+                </p>
 
-                <span>
-                  Logout
-                </span>
+                <p className="mt-0.5 text-[10px] text-slate-500">
+                  Workspace admin
+                </p>
+              </div>
 
-              </button>
+              <ChevronDown
+                size={15}
+                className={`
+                  hidden
+                  text-slate-500
+                  transition-transform
+                  md:block
+                  ${isProfileOpen ? "rotate-180" : ""}
+                `}
+              />
+            </button>
 
-            </div>
-          )}
+            <AnimatePresence>
+              {isProfileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                  className="
+                    absolute
+                    right-0
+                    top-[calc(100%+10px)]
+                    w-64
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-slate-800
+                    bg-slate-900/95
+                    shadow-2xl
+                    shadow-black/30
+                    backdrop-blur-xl
+                  "
+                >
+                  <div className="bg-slate-800/40 px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="
+                          flex
+                          h-10
+                          w-10
+                          items-center
+                          justify-center
+                          rounded-xl
+                          bg-gradient-to-br
+                          from-cyan-400
+                          to-blue-500
+                          text-sm
+                          font-bold
+                          text-white
+                        "
+                      >
+                        {userEmail.charAt(0).toUpperCase()}
+                      </div>
 
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-200">
+                          {userEmail}
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Administrator
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        navigate("/profile");
+                      }}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        gap-3
+                        rounded-xl
+                        px-3
+                        py-2.5
+                        text-left
+                        text-sm
+                        text-slate-300
+                        transition
+                        hover:bg-slate-800/60
+                        hover:text-slate-100
+                      "
+                    >
+                      <span
+                        className="
+                          flex
+                          h-8
+                          w-8
+                          items-center
+                          justify-center
+                          rounded-lg
+                          bg-slate-950/70
+                          text-slate-400
+                        "
+                      >
+                        <User size={15} />
+                      </span>
+
+                      Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        navigate("/settings");
+                      }}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        gap-3
+                        rounded-xl
+                        px-3
+                        py-2.5
+                        text-left
+                        text-sm
+                        text-slate-300
+                        transition
+                        hover:bg-slate-800/60
+                        hover:text-slate-100
+                      "
+                    >
+                      <span
+                        className="
+                          flex
+                          h-8
+                          w-8
+                          items-center
+                          justify-center
+                          rounded-lg
+                          bg-slate-950/70
+                          text-slate-400
+                        "
+                      >
+                        <Settings size={15} />
+                      </span>
+
+                      Settings
+                    </button>
+
+                    <div className="my-2 h-px bg-slate-800" />
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        gap-3
+                        rounded-xl
+                        px-3
+                        py-2.5
+                        text-left
+                        text-sm
+                        text-red-400
+                        transition
+                        hover:bg-red-500/10
+                        hover:text-red-300
+                      "
+                    >
+                      <span
+                        className="
+                          flex
+                          h-8
+                          w-8
+                          items-center
+                          justify-center
+                          rounded-lg
+                          bg-red-500/10
+                          text-red-400
+                        "
+                      >
+                        <LogOut size={15} />
+                      </span>
+
+                      Logout
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-
       </div>
-
-    </div>
+    </header>
   );
 }
 

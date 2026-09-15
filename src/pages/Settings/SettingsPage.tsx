@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 
 import {
-  Settings,
   Bell,
-  Shield,
+  CheckCircle2,
+  LockKeyhole,
+  Mail,
   Moon,
-  Sun,
   Save,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Sun,
 } from "lucide-react";
 
 interface LexAISettings {
@@ -90,13 +94,18 @@ function Toggle({
         relative
         h-7
         w-14
+        shrink-0
         rounded-full
+        border
         transition-all
         duration-200
+        focus:outline-none
+        focus:ring-2
+        focus:ring-cyan-500/20
         ${
           enabled
-            ? "bg-cyan-500"
-            : "bg-slate-700"
+            ? "border-cyan-400/20 bg-cyan-500"
+            : "border-slate-700 bg-slate-800"
         }
       `}
     >
@@ -108,7 +117,7 @@ function Toggle({
           w-5
           rounded-full
           bg-white
-          shadow-sm
+          shadow-md
           transition-all
           duration-200
           ${
@@ -133,23 +142,15 @@ function SettingsPage() {
     );
 
   const [notifications, setNotifications] =
-    useState(
-      initialSettings.notifications
-    );
+    useState(initialSettings.notifications);
 
   const [emailAlerts, setEmailAlerts] =
-    useState(
-      initialSettings.emailAlerts
-    );
+    useState(initialSettings.emailAlerts);
 
   const [darkMode, setDarkMode] =
-    useState(
-      initialSettings.darkMode
-    );
+    useState(initialSettings.darkMode);
 
-  const [saved, setSaved] =
-    useState(false);
-
+  const [saved, setSaved] = useState(false);
 
   // ========================================
   // Apply theme
@@ -159,16 +160,13 @@ function SettingsPage() {
     applyTheme(darkMode);
   }, [darkMode]);
 
-
   // ========================================
   // Save theme immediately
   // ========================================
 
   useEffect(() => {
     const currentSettings =
-      localStorage.getItem(
-        "lexai_settings"
-      );
+      localStorage.getItem("lexai_settings");
 
     let existingSettings: Record<
       string,
@@ -192,7 +190,6 @@ function SettingsPage() {
       })
     );
   }, [darkMode]);
-
 
   // ========================================
   // Save all settings
@@ -219,423 +216,428 @@ function SettingsPage() {
     }, 2500);
   };
 
-
   // ========================================
-  // Page
+  // Render
   // ========================================
 
   return (
-    <main className="p-8 space-y-8">
-
+    <main className="relative min-h-screen overflow-hidden">
       {/* ========================================
-          HEADER
+          AMBIENT BACKGROUND
       ======================================== */}
 
-      <section>
-        <div className="flex items-center gap-4">
+      <div className="pointer-events-none absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
 
-          <div
-            className="
-              flex
-              h-12
-              w-12
-              items-center
-              justify-center
-              rounded-xl
-              border
-              border-cyan-500/30
-              bg-cyan-500/10
-            "
-          >
-            <Settings
-              size={25}
-              className="text-cyan-400"
-            />
-          </div>
+      <div className="pointer-events-none absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl" />
 
-          <div>
-            <h1
-              className="
-                text-3xl
-                font-bold
-                text-white
-              "
-            >
-              Settings
-            </h1>
+      <div className="pointer-events-none absolute -bottom-40 left-0 h-96 w-96 rounded-full bg-blue-500/5 blur-3xl" />
 
-            <p
-              className="
-                mt-1
-                text-slate-400
-              "
-            >
-              Manage your LexAI application
-              preferences.
-            </p>
-          </div>
+      <div className="relative z-10 space-y-8">
+        {/* ========================================
+            HEADER
+        ======================================== */}
 
-        </div>
-      </section>
+        <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.06] via-transparent to-purple-500/[0.05]" />
 
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-300">
+                <Settings className="h-3.5 w-3.5" />
+                Workspace Configuration
+              </div>
 
-      {/* ========================================
-          NOTIFICATIONS
-      ======================================== */}
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Settings
+              </h1>
 
-      <section
-        className="
-          max-w-3xl
-          rounded-2xl
-          border
-          border-slate-800
-          bg-slate-900
-          p-6
-        "
-      >
-
-        <div
-          className="
-            mb-6
-            flex
-            items-center
-            gap-3
-          "
-        >
-          <Bell
-            size={22}
-            className="text-cyan-400"
-          />
-
-          <h2
-            className="
-              text-xl
-              font-semibold
-              text-white
-            "
-          >
-            Notifications
-          </h2>
-        </div>
-
-
-        <div className="space-y-6">
-
-          {/* Application Notifications */}
-
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-              gap-6
-            "
-          >
-
-            <div>
-              <h3
-                className="
-                  font-medium
-                  text-white
-                "
-              >
-                Application Notifications
-              </h3>
-
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  text-slate-500
-                "
-              >
-                Receive notifications about
-                activity in LexAI.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+                Manage your LexAI application preferences,
+                notifications, appearance, and account
+                configuration.
               </p>
             </div>
 
-            <Toggle
-              enabled={notifications}
-              onClick={() =>
-                setNotifications(
-                  !notifications
-                )
-              }
-              label="Toggle application notifications"
-            />
+            {/* Settings status */}
 
+            <div className="flex w-fit items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                <ShieldCheck className="h-5 w-5 text-emerald-300" />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Configuration
+                </p>
+
+                <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Active
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================
+            SETTINGS GRID
+        ======================================== */}
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          {/* ========================================
+              NOTIFICATIONS
+          ======================================== */}
+
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl sm:p-7">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.04] via-transparent to-transparent" />
+
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10">
+                    <Bell className="h-5 w-5 text-cyan-300" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">
+                      Notifications
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Control how LexAI keeps you informed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {/* Application Notifications */}
+
+                <div className="flex items-center justify-between gap-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 transition hover:border-slate-700">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800/70">
+                      <Bell className="h-4 w-4 text-slate-400" />
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-200">
+                        Application Notifications
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        Receive notifications about activity
+                        in LexAI.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Toggle
+                    enabled={notifications}
+                    onClick={() =>
+                      setNotifications(!notifications)
+                    }
+                    label="Toggle application notifications"
+                  />
+                </div>
+
+                {/* Email Alerts */}
+
+                <div className="flex items-center justify-between gap-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 transition hover:border-slate-700">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800/70">
+                      <Mail className="h-4 w-4 text-slate-400" />
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-200">
+                        Email Alerts
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        Receive important alerts through
+                        email.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Toggle
+                    enabled={emailAlerts}
+                    onClick={() =>
+                      setEmailAlerts(!emailAlerts)
+                    }
+                    label="Toggle email alerts"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* ========================================
+              APPEARANCE
+          ======================================== */}
 
-          {/* Email Alerts */}
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl sm:p-7">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.04] via-transparent to-transparent" />
 
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-              gap-6
-            "
-          >
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10">
+                    {darkMode ? (
+                      <Moon className="h-5 w-5 text-purple-300" />
+                    ) : (
+                      <Sun className="h-5 w-5 text-amber-300" />
+                    )}
+                  </div>
 
-            <div>
-              <h3
-                className="
-                  font-medium
-                  text-white
-                "
-              >
-                Email Alerts
-              </h3>
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">
+                      Appearance
+                    </h2>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  text-slate-500
-                "
-              >
-                Receive important alerts
-                through email.
-              </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Choose how LexAI looks on your device.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                <div className="flex items-center justify-between gap-5">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800/70">
+                      {darkMode ? (
+                        <Moon className="h-4 w-4 text-slate-400" />
+                      ) : (
+                        <Sun className="h-4 w-4 text-slate-400" />
+                      )}
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-200">
+                        {darkMode
+                          ? "Dark Mode"
+                          : "Light Mode"}
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        {darkMode
+                          ? "Use the dark interface for LexAI."
+                          : "Use the light interface for LexAI."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Toggle
+                    enabled={darkMode}
+                    onClick={() =>
+                      setDarkMode(!darkMode)
+                    }
+                    label="Toggle dark mode"
+                  />
+                </div>
+
+                <div className="mt-5 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2.5">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-300" />
+
+                  <p className="text-xs text-slate-600">
+                    Appearance preference is applied
+                    immediately.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================
+              SECURITY
+          ======================================== */}
+
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl sm:p-7">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] via-transparent to-transparent" />
+
+            <div className="relative">
+              <div className="flex items-start gap-4 border-b border-slate-800 pb-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
+                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    Security
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Review the current account security status.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <LockKeyhole className="h-5 w-5 text-emerald-300" />
+                  </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-white">
+                        Account Security
+                      </h3>
+
+                      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                        Protected
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-xs leading-5 text-slate-600">
+                      Your LexAI account is protected by
+                      secure authentication.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================
+              PREFERENCES SUMMARY
+          ======================================== */}
+
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl sm:p-7">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-cyan-500/[0.03]" />
+
+            <div className="relative">
+              <div className="flex items-start gap-4 border-b border-slate-800 pb-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10">
+                  <Settings className="h-5 w-5 text-blue-300" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    Current Preferences
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Quick overview of your active configuration.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                    Notifications
+                  </p>
+
+                  <p
+                    className={`mt-2 text-sm font-semibold ${
+                      notifications
+                        ? "text-emerald-300"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {notifications
+                      ? "Enabled"
+                      : "Disabled"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                    Email Alerts
+                  </p>
+
+                  <p
+                    className={`mt-2 text-sm font-semibold ${
+                      emailAlerts
+                        ? "text-emerald-300"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {emailAlerts
+                      ? "Enabled"
+                      : "Disabled"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                    Theme
+                  </p>
+
+                  <p className="mt-2 text-sm font-semibold text-cyan-300">
+                    {darkMode ? "Dark" : "Light"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================
+            SAVE SETTINGS
+        ======================================== */}
+
+        <section className="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
+              <Save className="h-5 w-5 text-cyan-300" />
             </div>
 
-            <Toggle
-              enabled={emailAlerts}
-              onClick={() =>
-                setEmailAlerts(
-                  !emailAlerts
-                )
-              }
-              label="Toggle email alerts"
-            />
+            <div>
+              <p className="text-sm font-semibold text-slate-300">
+                Save your workspace preferences
+              </p>
 
+              <p className="mt-1 text-xs text-slate-600">
+                Your settings are stored locally for this
+                LexAI session.
+              </p>
+            </div>
           </div>
 
-        </div>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            {saved && (
+              <span className="flex items-center gap-2 text-sm font-medium text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Settings saved successfully
+              </span>
+            )}
 
-      </section>
-
-
-      {/* ========================================
-          APPEARANCE
-      ======================================== */}
-
-      <section
-        className="
-          max-w-3xl
-          rounded-2xl
-          border
-          border-slate-800
-          bg-slate-900
-          p-6
-        "
-      >
-
-        <div
-          className="
-            mb-6
-            flex
-            items-center
-            gap-3
-          "
-        >
-
-          {darkMode ? (
-            <Moon
-              size={22}
-              className="text-cyan-400"
-            />
-          ) : (
-            <Sun
-              size={22}
-              className="text-cyan-400"
-            />
-          )}
-
-          <h2
-            className="
-              text-xl
-              font-semibold
-              text-white
-            "
-          >
-            Appearance
-          </h2>
-
-        </div>
-
-
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            gap-6
-          "
-        >
-
-          <div>
-
-            <h3
+            <button
+              type="button"
+              onClick={handleSave}
               className="
-                font-medium
-                text-white
-              "
-            >
-              {darkMode
-                ? "Dark Mode"
-                : "Light Mode"}
-            </h3>
-
-            <p
-              className="
-                mt-1
+                inline-flex
+                items-center
+                justify-center
+                gap-2
+                rounded-2xl
+                border
+                border-cyan-400/20
+                bg-cyan-500
+                px-5
+                py-3
                 text-sm
-                text-slate-500
+                font-semibold
+                text-white
+                shadow-lg
+                shadow-cyan-500/10
+                transition-all
+                hover:-translate-y-0.5
+                hover:bg-cyan-400
+                focus:outline-none
+                focus:ring-2
+                focus:ring-cyan-500/30
               "
             >
-              {darkMode
-                ? "Use the dark interface for LexAI."
-                : "Use the light interface for LexAI."}
-            </p>
-
+              <Save className="h-4 w-4" />
+              Save Settings
+            </button>
           </div>
-
-
-          <Toggle
-            enabled={darkMode}
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            label="Toggle dark mode"
-          />
-
-        </div>
-
-      </section>
-
-
-      {/* ========================================
-          SECURITY
-      ======================================== */}
-
-      <section
-        className="
-          max-w-3xl
-          rounded-2xl
-          border
-          border-slate-800
-          bg-slate-900
-          p-6
-        "
-      >
-
-        <div
-          className="
-            mb-6
-            flex
-            items-center
-            gap-3
-          "
-        >
-
-          <Shield
-            size={22}
-            className="text-cyan-400"
-          />
-
-          <h2
-            className="
-              text-xl
-              font-semibold
-              text-white
-            "
-          >
-            Security
-          </h2>
-
-        </div>
-
-
-        <div>
-
-          <h3
-            className="
-              font-medium
-              text-white
-            "
-          >
-            Account Security
-          </h3>
-
-          <p
-            className="
-              mt-1
-              text-sm
-              text-slate-500
-            "
-          >
-            Your LexAI account is protected
-            by secure authentication.
-          </p>
-
-        </div>
-
-      </section>
-
-
-      {/* ========================================
-          SAVE SETTINGS
-      ======================================== */}
-
-      <div
-        className="
-          flex
-          max-w-3xl
-          items-center
-          gap-4
-        "
-      >
-
-        <button
-          type="button"
-          onClick={handleSave}
-          className="
-            flex
-            items-center
-            gap-2
-            rounded-xl
-            bg-cyan-500
-            px-6
-            py-3
-            font-semibold
-            text-white
-            transition
-            hover:bg-cyan-400
-          "
-        >
-
-          <Save size={18} />
-
-          Save Settings
-
-        </button>
-
-
-        {saved && (
-          <span
-            className="
-              text-sm
-              text-green-400
-            "
-          >
-            Settings saved successfully.
-          </span>
-        )}
-
+        </section>
       </div>
-
     </main>
   );
 }

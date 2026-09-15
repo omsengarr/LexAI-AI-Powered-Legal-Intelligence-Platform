@@ -6,6 +6,9 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Database,
+  Clock3,
+  FileType2,
 } from "lucide-react";
 
 import {
@@ -184,16 +187,6 @@ function DocumentList({
       return "Unknown date";
     }
 
-    /*
-     * Backend stores the timestamp in UTC.
-     *
-     * Example:
-     * 2026-08-28T14:13:38.370413
-     *
-     * We explicitly tell JavaScript that this
-     * timestamp is UTC by adding "Z".
-     */
-
     let dateString = date;
 
     if (
@@ -221,10 +214,6 @@ function DocumentList({
 
     }
 
-
-    /*
-     * Convert UTC → Asia/Kolkata (IST)
-     */
 
     return parsedDate.toLocaleString(
       "en-IN",
@@ -289,6 +278,26 @@ function DocumentList({
 
 
   // ========================================
+  // Get File Icon
+  // ========================================
+
+  function getFileIcon(
+    fileType: string
+  ) {
+
+    if (fileType === "DOCX") {
+      return (
+        <FileType2 className="h-5 w-5" />
+      );
+    }
+
+    return (
+      <FileText className="h-5 w-5" />
+    );
+  }
+
+
+  // ========================================
   // Loading State
   // ========================================
 
@@ -298,32 +307,65 @@ function DocumentList({
 
       <div
         className="
-          flex
-          min-h-40
-          items-center
-          justify-center
+          relative
+          overflow-hidden
           rounded-2xl
           border
-          border-slate-800
-          bg-slate-900
+          border-slate-800/80
+          bg-[#080e19]
+          p-10
         "
       >
 
         <div
           className="
-            flex
-            items-center
-            gap-3
-            text-slate-400
+            pointer-events-none
+            absolute
+            left-1/2
+            top-0
+            h-32
+            w-48
+            -translate-x-1/2
+            rounded-full
+            bg-cyan-400/[0.04]
+            blur-3xl
           "
-        >
+        />
 
-          <Loader2
-            size={22}
-            className="animate-spin text-cyan-400"
-          />
+        <div className="relative flex min-h-32 items-center justify-center">
 
-          Loading documents...
+          <div className="flex flex-col items-center gap-3">
+
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-cyan-400/15
+                bg-cyan-400/[0.06]
+              "
+            >
+
+              <Loader2
+                className="
+                  h-4
+                  w-4
+                  animate-spin
+                  text-cyan-400
+                "
+              />
+
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Loading documents...
+            </p>
+
+          </div>
 
         </div>
 
@@ -346,59 +388,83 @@ function DocumentList({
 
       <div
         className="
+          relative
+          overflow-hidden
           rounded-2xl
           border
-          border-red-500/30
-          bg-red-500/10
+          border-red-400/15
+          bg-red-400/[0.035]
           p-6
         "
       >
 
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-            text-red-400
-          "
-        >
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
 
-          <AlertCircle size={22} />
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-red-400/15
+              bg-red-400/[0.06]
+            "
+          >
 
-          <span>
-            {error}
-          </span>
+            <AlertCircle className="h-5 w-5 text-red-400" />
+
+          </div>
+
+
+          <div className="flex-1">
+
+            <p className="text-xs font-semibold text-red-300">
+              Unable to load documents
+            </p>
+
+            <p className="mt-1 text-[10px] leading-5 text-red-400/60">
+              {error}
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            onClick={loadDocuments}
+            className="
+              inline-flex
+              shrink-0
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-slate-700
+              bg-slate-950/70
+              px-4
+              py-2.5
+              text-[10px]
+              font-semibold
+              text-slate-300
+              transition-all
+              duration-300
+              hover:border-cyan-400/25
+              hover:bg-cyan-400/[0.05]
+              hover:text-cyan-300
+            "
+          >
+
+            <RefreshCw className="h-3.5 w-3.5" />
+
+            Try Again
+
+          </button>
 
         </div>
-
-
-        <button
-          type="button"
-          onClick={loadDocuments}
-          className="
-            mt-4
-            inline-flex
-            items-center
-            gap-2
-            rounded-lg
-            border
-            border-slate-700
-            bg-slate-900
-            px-4
-            py-2
-            text-sm
-            font-medium
-            text-white
-            transition
-            hover:border-cyan-500/50
-          "
-        >
-
-          <RefreshCw size={16} />
-
-          Try Again
-
-        </button>
 
       </div>
 
@@ -418,10 +484,12 @@ function DocumentList({
 
       <div
         className="
+          relative
+          overflow-hidden
           rounded-2xl
           border
-          border-slate-800
-          bg-slate-900
+          border-slate-800/80
+          bg-[#080e19]
           p-10
           text-center
         "
@@ -429,52 +497,69 @@ function DocumentList({
 
         <div
           className="
-            mx-auto
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
+            pointer-events-none
+            absolute
+            left-1/2
+            top-0
+            h-40
+            w-48
+            -translate-x-1/2
             rounded-full
-            bg-cyan-500/10
-            text-cyan-400
+            bg-cyan-400/[0.035]
+            blur-3xl
           "
-        >
+        />
 
-          <FileText size={26} />
+        <div className="relative">
+
+          <div
+            className="
+              mx-auto
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              border-cyan-400/15
+              bg-cyan-400/[0.06]
+            "
+          >
+
+            <Database className="h-6 w-6 text-cyan-400" />
+
+          </div>
+
+
+          <h3
+            className="
+              mt-5
+              text-base
+              font-semibold
+              text-white
+            "
+          >
+            No Documents Found
+          </h3>
+
+
+          <p
+            className="
+              mx-auto
+              mt-2
+              max-w-md
+              text-xs
+              leading-6
+              text-slate-600
+            "
+          >
+            Upload your first legal document to
+            start using LexAI's document intelligence
+            features.
+          </p>
 
         </div>
-
-
-        <h3
-          className="
-            mt-5
-            text-lg
-            font-semibold
-            text-white
-          "
-        >
-
-          No Documents Found
-
-        </h3>
-
-
-        <p
-          className="
-            mx-auto
-            mt-2
-            max-w-md
-            text-sm
-            text-slate-500
-          "
-        >
-
-          Upload your first legal document to
-          start using LexAI's document intelligence
-          features.
-
-        </p>
 
       </div>
 
@@ -488,12 +573,11 @@ function DocumentList({
 
   return (
 
-    <div className="space-y-4">
-
+    <div className="space-y-3">
 
       {/* ==================================
           Error while documents exist
-          ================================== */}
+      ================================== */}
 
       {error && (
 
@@ -504,18 +588,20 @@ function DocumentList({
             gap-3
             rounded-xl
             border
-            border-red-500/30
-            bg-red-500/10
+            border-red-400/15
+            bg-red-400/[0.035]
             px-4
             py-3
-            text-sm
-            text-red-400
+            text-xs
+            text-red-300
           "
         >
 
-          <AlertCircle size={18} />
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
 
-          {error}
+          <span>
+            {error}
+          </span>
 
         </div>
 
@@ -523,8 +609,69 @@ function DocumentList({
 
 
       {/* ==================================
+          Document Count
+      ================================== */}
+
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          px-1
+          pb-1
+        "
+      >
+
+        <div className="flex items-center gap-2">
+
+          <span className="relative flex h-1.5 w-1.5">
+
+            <span
+              className="
+                absolute
+                inline-flex
+                h-full
+                w-full
+                animate-ping
+                rounded-full
+                bg-cyan-400
+                opacity-30
+              "
+            />
+
+            <span
+              className="
+                relative
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-cyan-400
+              "
+            />
+
+          </span>
+
+          <span className="text-[9px] font-medium uppercase tracking-[0.13em] text-slate-600">
+            {documents.length}{" "}
+            {documents.length === 1
+              ? "document"
+              : "documents"}{" "}
+            available
+          </span>
+
+        </div>
+
+
+        <span className="text-[9px] uppercase tracking-[0.12em] text-slate-700">
+          Repository
+        </span>
+
+      </div>
+
+
+      {/* ==================================
           Document Cards
-          ================================== */}
+      ================================== */}
 
       {documents.map(
         (document) => {
@@ -542,211 +689,280 @@ function DocumentList({
               key={document.id}
               className="
                 group
-                flex
-                flex-col
-                gap-4
+                relative
+                overflow-hidden
                 rounded-2xl
                 border
-                border-slate-800
-                bg-slate-900
-                p-5
-                transition
+                border-slate-800/80
+                bg-[#080e19]
+                p-4
+                transition-all
+                duration-300
+                hover:-translate-y-0.5
                 hover:border-slate-700
-                hover:bg-slate-900/80
-                sm:flex-row
-                sm:items-center
-                sm:justify-between
+                hover:bg-[#0a111d]
+                hover:shadow-[0_18px_50px_rgba(0,0,0,0.18)]
+                sm:p-5
               "
             >
 
-
-              {/* =================================
-                   Left Side
-                   ================================= */}
+              {/* Hover glow */}
 
               <div
                 className="
-                  flex
-                  min-w-0
-                  items-center
-                  gap-4
+                  pointer-events-none
+                  absolute
+                  -right-12
+                  -top-12
+                  h-32
+                  w-32
+                  rounded-full
+                  bg-cyan-400/[0.025]
+                  blur-3xl
+                  opacity-0
+                  transition-opacity
+                  duration-300
+                  group-hover:opacity-100
                 "
-              >
-
-                {/* File Icon */}
-
-                <div
-                  className="
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-cyan-500/10
-                    text-cyan-400
-                  "
-                >
-
-                  <FileText size={24} />
-
-                </div>
+              />
 
 
-                {/* File Information */}
-
-                <div className="min-w-0">
-
-                  <h3
-                    className="
-                      truncate
-                      font-semibold
-                      text-white
-                    "
-                  >
-
-                    {document.filename}
-
-                  </h3>
-
-
-                  <div
-                    className="
-                      mt-1
-                      flex
-                      flex-wrap
-                      items-center
-                      gap-x-3
-                      gap-y-1
-                      text-sm
-                      text-slate-500
-                    "
-                  >
-
-                    <span>
-                      {document.content_type ||
-                        fileType}
-                    </span>
-
-                    <span className="hidden sm:inline">
-                      •
-                    </span>
-
-                    <span>
-                      {fileType}
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              {/* =================================
-                   Right Side
-                   ================================= */}
+              {/* Active side indicator */}
 
               <div
                 className="
+                  absolute
+                  left-0
+                  top-1/2
+                  h-8
+                  w-[2px]
+                  -translate-y-1/2
+                  rounded-r-full
+                  bg-cyan-400
+                  opacity-0
+                  shadow-[0_0_12px_rgba(34,211,238,0.7)]
+                  transition-opacity
+                  duration-300
+                  group-hover:opacity-100
+                "
+              />
+
+
+              <div
+                className="
+                  relative
                   flex
-                  flex-wrap
-                  items-center
-                  justify-between
-                  gap-3
-                  sm:justify-end
+                  flex-col
+                  gap-4
+                  sm:flex-row
+                  sm:items-center
+                  sm:justify-between
                 "
               >
 
                 {/* =================================
-                     Upload Date + Time
-                     ================================= */}
+                     File Information
+                ================================= */}
 
                 <div
                   className="
-                    whitespace-nowrap
-                    text-right
+                    flex
+                    min-w-0
+                    items-center
+                    gap-4
                   "
                 >
 
+                  {/* File Icon */}
+
                   <div
                     className="
-                      mb-1
-                      text-xs
-                      text-slate-500
+                      flex
+                      h-11
+                      w-11
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-cyan-400/15
+                      bg-cyan-400/[0.06]
+                      text-cyan-400
+                      transition-all
+                      duration-300
+                      group-hover:border-cyan-400/25
+                      group-hover:bg-cyan-400/[0.09]
                     "
                   >
 
-                    Uploaded
+                    {getFileIcon(fileType)}
 
                   </div>
 
+
+                  {/* File Details */}
+
+                  <div className="min-w-0">
+
+                    <div className="flex items-center gap-2">
+
+                      <h3
+                        className="
+                          truncate
+                          text-xs
+                          font-semibold
+                          text-slate-200
+                          transition-colors
+                          duration-300
+                          group-hover:text-white
+                          sm:text-sm
+                        "
+                      >
+                        {document.filename}
+                      </h3>
+
+                    </div>
+
+
+                    <div
+                      className="
+                        mt-1.5
+                        flex
+                        flex-wrap
+                        items-center
+                        gap-x-2
+                        gap-y-1
+                      "
+                    >
+
+                      <span
+                        className="
+                          rounded-md
+                          border
+                          border-slate-800
+                          bg-slate-950/60
+                          px-2
+                          py-0.5
+                          text-[8px]
+                          font-semibold
+                          uppercase
+                          tracking-[0.1em]
+                          text-cyan-500/70
+                        "
+                      >
+                        {fileType}
+                      </span>
+
+                      <span className="text-[9px] text-slate-700">
+                        {document.content_type ||
+                          "Legal document"}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                {/* =================================
+                     Metadata + Delete
+                ================================= */}
+
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-4
+                    sm:justify-end
+                  "
+                >
+
+                  {/* Uploaded */}
+
                   <div
                     className="
-                      text-sm
-                      text-slate-300
+                      flex
+                      items-center
+                      gap-2
+                      sm:text-right
                     "
                   >
 
-                    {formatDateTime(
-                      document.uploaded_at
+                    <Clock3 className="h-3.5 w-3.5 text-slate-700" />
+
+                    <div>
+
+                      <p className="text-[8px] uppercase tracking-[0.12em] text-slate-700">
+                        Uploaded
+                      </p>
+
+                      <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">
+                        {formatDateTime(
+                          document.uploaded_at
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* Delete */}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDelete(
+                        document.id
+                      )
+                    }
+                    disabled={
+                      deletingId === document.id
+                    }
+                    title="Delete document"
+                    className="
+                      flex
+                      h-9
+                      w-9
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-red-400/10
+                      bg-red-400/[0.035]
+                      text-red-400/70
+                      transition-all
+                      duration-300
+                      hover:border-red-400/20
+                      hover:bg-red-400/[0.08]
+                      hover:text-red-300
+                      disabled:cursor-not-allowed
+                      disabled:opacity-40
+                    "
+                  >
+
+                    {deletingId === document.id ? (
+
+                      <Loader2
+                        className="
+                          h-4
+                          w-4
+                          animate-spin
+                        "
+                      />
+
+                    ) : (
+
+                      <Trash2 className="h-4 w-4" />
+
                     )}
 
-                  </div>
+                  </button>
 
                 </div>
-
-
-                {/* =================================
-                     Delete
-                     ================================= */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDelete(
-                      document.id
-                    )
-                  }
-                  disabled={
-                    deletingId === document.id
-                  }
-                  title="Delete document"
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-lg
-                    border
-                    border-red-500/30
-                    bg-red-500/5
-                    text-red-400
-                    transition
-                    hover:bg-red-500/10
-                    hover:text-red-300
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
-                >
-
-                  {deletingId === document.id ? (
-
-                    <Loader2
-                      size={18}
-                      className="animate-spin"
-                    />
-
-                  ) : (
-
-                    <Trash2 size={18} />
-
-                  )}
-
-                </button>
 
               </div>
 
