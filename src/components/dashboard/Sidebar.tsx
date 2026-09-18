@@ -9,6 +9,7 @@ import {
   FileText,
   Gavel,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
   Menu,
   MessageSquare,
@@ -42,14 +43,19 @@ const navSections: NavSection[] = [
         icon: LayoutDashboard,
       },
       {
-        label: "Documents",
-        path: "/documents/upload",
-        icon: FileText,
+       label: "Documents",
+       path: "/documents/upload",
+       icon: FileText,
       },
       {
-        label: "AI Chat",
-        path: "/chat",
-        icon: MessageSquare,
+       label: "Page Lock & Analysis",
+       path: "/documents/analyze",
+       icon: LockKeyhole,
+      },
+      {
+       label: "AI Chat",
+       path: "/chat",
+       icon: MessageSquare,
       },
       {
         label: "Case Search",

@@ -7,8 +7,6 @@ import AuthLayout from "../../layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 
-import { loginUser } from "../../services/api";
-
 function LoginPage() {
   const navigate = useNavigate();
 
@@ -29,25 +27,46 @@ function LoginPage() {
 
     setError("");
 
-    // Check email and password
-    if (!email.trim() || !password.trim()) {
-      setError(
-        "Please enter your email and password."
-      );
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
+    // ========================================
+    // Validate Email
+    // ========================================
+
+    if (!trimmedEmail) {
+      setError("Please enter your email address.");
       return;
     }
+
+    // Only Gmail addresses are allowed
+    const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+
+    if (!gmailRegex.test(trimmedEmail)) {
+      setError("Please enter a valid Gmail address ending with @gmail.com.");
+      return;
+    }
+
+    // ========================================
+    // Validate Password
+    // ========================================
+
+    if (!trimmedPassword) {
+      setError("Password cannot be blank.");
+      return;
+    }
+
+    // ========================================
+    // Demo Login
+    // ========================================
 
     setLoading(true);
 
     try {
-      // ========================================
-      // Backend Authentication
-      // ========================================
-
-      const data = await loginUser(
-        email,
-        password
+      // Small delay to preserve the existing
+      // "Logging in..." experience.
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500)
       );
 
       // ========================================
@@ -61,17 +80,18 @@ function LoginPage() {
 
       localStorage.setItem(
         "lexai_user_email",
-        data.user.email
+        trimmedEmail
       );
 
+      // Demo user information
       localStorage.setItem(
         "lexai_user_id",
-        String(data.user.id)
+        "demo-user"
       );
 
       localStorage.setItem(
         "lexai_user_role",
-        data.user.role
+        "user"
       );
 
       // ========================================
@@ -83,13 +103,11 @@ function LoginPage() {
       });
 
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError(
-          "Login failed. Please try again."
-        );
-      }
+      console.error("Demo login failed:", error);
+
+      setError(
+        "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -113,7 +131,7 @@ function LoginPage() {
         <Input
           label="Email Address"
           type="email"
-          placeholder="Enter your email"
+          placeholder="Enter your Gmail address"
           required
           value={email}
           onChange={(event) =>

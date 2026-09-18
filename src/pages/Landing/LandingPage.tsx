@@ -12,7 +12,7 @@ function LandingPage() {
   return (
     <div
       id="home"
-      className="bg-slate-950 scroll-smooth"
+      className="lexai-landing-page min-h-screen bg-[#020617] text-white scroll-smooth"
     >
       <Navbar />
 

@@ -97,7 +97,12 @@ function Features() {
 
         <div className="absolute right-[-200px] top-[45%] h-[500px] w-[500px] rounded-full bg-cyan-500/5 blur-[130px]" />
 
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#020617] to-transparent" />
+        {/* IMPORTANT:
+            Bottom fade removed.
+            The previous transparent gradient was exposing
+            the light-mode page background and creating a
+            grey/white band between sections.
+        */}
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
@@ -420,6 +425,7 @@ function Features() {
                             <div className="mt-4 space-y-3">
                               <div className="flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+
                                 <span className="text-[9px] text-slate-500">
                                   Relevant authority
                                 </span>
@@ -427,6 +433,7 @@ function Features() {
 
                               <div className="flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+
                                 <span className="text-[9px] text-slate-500">
                                   Legal principle
                                 </span>
@@ -434,6 +441,7 @@ function Features() {
 
                               <div className="flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+
                                 <span className="text-[9px] text-slate-500">
                                   Case outcome
                                 </span>

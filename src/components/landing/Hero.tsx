@@ -44,8 +44,12 @@ function Hero() {
           }}
         />
 
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#020617] to-transparent" />
+        {/* IMPORTANT:
+            Bottom fade removed.
+            The previous transparent gradient was exposing
+            the light-mode page background and creating a
+            grey/white band between sections.
+        */}
       </div>
 
       <Container>
