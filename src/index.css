@@ -1621,3 +1621,104 @@ html.light .lexai-landing-page > section {
 html.light .lexai-landing-page footer {
   background-color: #01040c !important;
 }
+
+/* =========================================================
+   DOCUMENT ANALYSIS — ALWAYS LIGHT
+   =========================================================
+   Page Lock & AI Analysis intentionally keeps the exact
+   light UI in both workspace themes.
+
+   Sidebar and Topbar still follow the workspace theme.
+   Only the Document Analysis content stays light.
+   ========================================================= */
+
+html:not(.light) .document-analysis-page,
+html.light .document-analysis-page {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html:not(.light) .document-analysis-page .bg-white,
+html.light .document-analysis-page .bg-white {
+  background-color: #ffffff !important;
+}
+
+html:not(.light) .document-analysis-page .bg-slate-50,
+html.light .document-analysis-page .bg-slate-50 {
+  background-color: #f8fafc !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-950,
+html.light .document-analysis-page .text-slate-950 {
+  color: #020617 !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-900,
+html.light .document-analysis-page .text-slate-900 {
+  color: #0f172a !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-800,
+html.light .document-analysis-page .text-slate-800 {
+  color: #1e293b !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-700,
+html.light .document-analysis-page .text-slate-700 {
+  color: #334155 !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-600,
+html.light .document-analysis-page .text-slate-600 {
+  color: #475569 !important;
+}
+
+html:not(.light) .document-analysis-page .text-slate-500,
+html.light .document-analysis-page .text-slate-500 {
+  color: #64748b !important;
+}
+
+html:not(.light) .document-analysis-page .border-slate-200,
+html.light .document-analysis-page .border-slate-200 {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.light) .document-analysis-page .border-slate-300,
+html.light .document-analysis-page .border-slate-300 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Keep document selector light in both themes */
+html:not(.light) .document-analysis-page select,
+html.light .document-analysis-page select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.light) .document-analysis-page option,
+html.light .document-analysis-page option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Privacy/result surfaces */
+html:not(.light) .document-analysis-page .bg-red-50,
+html.light .document-analysis-page .bg-red-50 {
+  background-color: #fef2f2 !important;
+}
+
+html:not(.light) .document-analysis-page .bg-emerald-50,
+html.light .document-analysis-page .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+}
+
+html:not(.light) .document-analysis-page .bg-cyan-50,
+html.light .document-analysis-page .bg-cyan-50 {
+  background-color: #ecfeff !important;
+}
+
+html:not(.light) .document-analysis-page .bg-purple-50,
+html.light .document-analysis-page .bg-purple-50 {
+  background-color: #faf5ff !important;
+}
