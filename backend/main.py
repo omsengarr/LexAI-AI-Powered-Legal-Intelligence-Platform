@@ -7,6 +7,8 @@ from typing import List
 import shutil
 import os
 import time
+import json
+import re
 from dotenv import load_dotenv
 from google import genai
 
@@ -1107,69 +1109,47 @@ def chat(
         f"User question: {user_message}"
     )
 
-    models_to_try = [
-        "gemini-3.5-flash",
-        "gemini-2.5-flash",
-    ]
+    import requests
 
-    ai_response = None
-    last_error = None
+    try:
+        print("Trying local Ollama model: llama3.2:latest")
 
-    for model_name in models_to_try:
-
-        for attempt in range(2):
-
-            try:
-
-                print(
-                    f"Trying Gemini model: {model_name} "
-                    f"(attempt {attempt + 1}/2)"
-                )
-
-                response = gemini_client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
-                )
-
-                ai_response = response.text
-
-                if ai_response:
-
-                    print(
-                        f"Gemini response generated successfully "
-                        f"using {model_name}"
-                    )
-
-                    break
-
-            except Exception as error:
-
-                last_error = error
-
-                print(
-                    f"Gemini API error using {model_name} "
-                    f"(attempt {attempt + 1}/2):",
-                    error
-                )
-
-                if attempt == 0:
-                    time.sleep(1)
-
-        if ai_response:
-            break
-
-    if not ai_response:
-
-        print(
-            "All Gemini attempts failed:",
-            last_error
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": (
+                    "You are LexAI, an AI legal assistant. "
+                    "Provide clear, concise and educational "
+                    "legal information. "
+                    "Do not claim to be a lawyer. "
+                    "Remind users that your response is "
+                    "general legal information and not a "
+                    "substitute for professional legal advice.\n\n"
+                    f"User question: {user_message}"
+                ),
+                "stream": False
+            },
+            timeout=120
         )
+
+        response.raise_for_status()
+
+        ai_response = response.json().get("response")
+
+        if not ai_response:
+            raise Exception("Ollama returned an empty response")
+
+        print("Ollama response generated successfully")
+
+    except Exception as error:
+        print("Ollama API error:", error)
 
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI service is temporarily "
-                "unavailable. Please try again in a moment."
+                "The LexAI local AI service is temporarily "
+                "unavailable. Please make sure Ollama is running."
             )
         )
 
@@ -1657,25 +1637,33 @@ def analyze_document_pages(
     )
 
     try:
+        import requests
 
-        response = gemini_client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=prompt
+        print("Trying local Ollama model: llama3.2:latest")
+
+        ollama_response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=120
         )
 
-        analysis = response.text
+        ollama_response.raise_for_status()
+
+        analysis = ollama_response.json().get("response")
 
         if not analysis:
+            raise Exception("Ollama returned an empty analysis")
 
-            analysis = (
-                "I was unable to generate an analysis "
-                "for the unlocked pages."
-            )
+        print("Ollama document analysis generated successfully")
 
     except Exception as error:
 
         print(
-            "Gemini document analysis error:",
+            "Ollama document analysis error:",
             error
         )
 
@@ -1903,77 +1891,40 @@ UNLOCKED DOCUMENT PAGES:
 {summary_context}
 """
 
-    models_to_try = [
-        "gemini-3.5-flash",
-        "gemini-2.5-flash",
-    ]
+    import requests
 
     summary = None
-    last_error = None
 
-    for model_name in models_to_try:
+    try:
+        print("Trying local Ollama model: llama3.2:latest")
 
-        for attempt in range(2):
-
-            try:
-
-                print(
-                    f"Trying Gemini summary model: "
-                    f"{model_name} "
-                    f"(attempt {attempt + 1}/2)"
-                )
-
-                response = (
-                    gemini_client.models.generate_content(
-                        model=model_name,
-                        contents=prompt
-                    )
-                )
-
-                summary = (
-                    response.text
-                    if response and response.text
-                    else None
-                )
-
-                if summary:
-
-                    print(
-                        "Document summary generated "
-                        f"successfully using {model_name}"
-                    )
-
-                    break
-
-            except Exception as error:
-
-                last_error = error
-
-                print(
-                    f"Gemini document summary error "
-                    f"using {model_name} "
-                    f"(attempt {attempt + 1}/2):",
-                    error
-                )
-
-                if attempt == 0:
-                    time.sleep(1)
-
-        if summary:
-            break
-
-    if not summary:
-
-        print(
-            "All Gemini document summary attempts failed:",
-            last_error
+        ollama_response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=120
         )
+
+        ollama_response.raise_for_status()
+
+        summary = ollama_response.json().get("response")
+
+        if not summary:
+            raise Exception("Ollama returned an empty summary")
+
+        print("Ollama document summary generated successfully")
+
+    except Exception as error:
+        print("Ollama document summary error:", error)
 
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI service is temporarily "
-                "unavailable. Please try again in a moment."
+                "The LexAI local AI service is temporarily "
+                "unavailable. Please make sure Ollama is running."
             )
         )
 
@@ -2229,83 +2180,48 @@ UNLOCKED DOCUMENT PAGES:
 {risk_context}
 """
 
-    models_to_try = [
-        "gemini-3.5-flash",
-        "gemini-2.5-flash",
-    ]
+    import requests
 
     ai_result = None
-    last_error = None
 
-    for model_name in models_to_try:
+    try:
+        print("Starting Ollama risk analysis...")
 
-        for attempt in range(2):
-
-            try:
-
-                print(
-                    f"Trying Gemini risk analysis model: "
-                    f"{model_name} "
-                    f"(attempt {attempt + 1}/2)"
-                )
-
-                response = (
-                    gemini_client.models.generate_content(
-                        model=model_name,
-                        contents=prompt
-                    )
-                )
-
-                ai_result = (
-                    response.text
-                    if response and response.text
-                    else None
-                )
-
-                if ai_result:
-
-                    print(
-                        "Gemini risk analysis generated "
-                        f"successfully using {model_name}"
-                    )
-
-                    break
-
-            except Exception as error:
-
-                last_error = error
-
-                print(
-                    f"Gemini risk analysis error using "
-                    f"{model_name} "
-                    f"(attempt {attempt + 1}/2):",
-                    error
-                )
-
-                if attempt == 0:
-
-                    time.sleep(1)
-
-        if ai_result:
-            break
-
-    if not ai_result:
-
-        print(
-            "All Gemini risk analysis attempts failed:",
-            last_error
+        ollama_response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+                "options": {
+                    "temperature": 0.1
+                }
+            },
+            timeout=300
         )
+
+        ollama_response.raise_for_status()
+
+        ai_result = ollama_response.json().get("response")
+
+        if not ai_result or not ai_result.strip():
+            raise ValueError(
+                "Ollama returned an empty risk analysis."
+            )
+
+        print("Ollama risk analysis generated successfully.")
+
+    except Exception as error:
+        print("Ollama risk analysis error:", error)
 
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI service is temporarily "
-                "unavailable. Please try again in a moment."
+                "The LexAI local AI service is temporarily "
+                "unavailable. Please check that Ollama is running."
             )
         )
-
-    import json
-    import re
 
     cleaned_result = ai_result.strip()
 
@@ -3361,51 +3277,49 @@ def ask_document(
         ]
     )
 
+    prompt = (
+        "Answer the user's question using only the following unlocked "
+                "document excerpts. Do not use information from locked pages.\n\n"
+                f"Question: {user_question}\n\n"
+                f"Document excerpts:\n{context}"
+    )
+
     try:
+        import requests
 
-        response = gemini_client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=(
-                "You are LexAI, an AI legal/document assistant.\n\n"
+        print("Starting Ollama document analysis...")
 
-                "Answer the user's question using ONLY the "
-                "provided unlocked document context.\n\n"
-
-                "IMPORTANT PRIVACY RULE:\n"
-                "Some document pages have been locked by the user. "
-                "Locked pages are private and must not be used, "
-                "referenced, inferred from, or disclosed.\n\n"
-
-                "If the answer cannot be found in the unlocked "
-                "context, clearly say that the information is "
-                "not available in the accessible document pages.\n\n"
-
-                "Do not invent facts.\n\n"
-
-                f"UNLOCKED DOCUMENT CONTEXT:\n{context}\n\n"
-
-                f"USER QUESTION:\n{user_question}"
-            )
+        ollama_response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=300
         )
 
-        ai_response = response.text
+        ollama_response.raise_for_status()
+        ai_response = ollama_response.json().get("response")
 
         if not ai_response:
-
             ai_response = (
-                "I was unable to generate an answer."
+                "I was unable to generate an answer "
+                "for the unlocked pages."
             )
+
+        print("Ollama document analysis generated successfully.")
 
     except Exception as error:
 
         print(
-            "Gemini document analysis error:",
+            "Ollama document analysis error:",
             error
         )
 
         raise HTTPException(
             status_code=500,
-            detail="Failed to generate document answer."
+            detail="Failed to generate document analysis."
         )
 
     return {
@@ -3540,51 +3454,45 @@ def summarize_document_page(
         )
 
     try:
+        import requests
 
-        response = gemini_client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=(
-                "You are LexAI, an AI legal/document "
-                "intelligence assistant.\n\n"
+        print("Trying local Ollama model: llama3.2:latest")
 
-                "Summarize the following document page "
-                "clearly and concisely.\n\n"
-
-                "Focus on the important facts, topics, "
-                "requirements, dates, entities, decisions, "
-                "or other meaningful information present "
-                "on the page.\n\n"
-
-                "Do not invent information.\n\n"
-
-                "Use ONLY the provided page text.\n\n"
-
-                f"PAGE {page_number} TEXT:\n"
-                f"{page_text}"
-            )
+        ollama_response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.2:latest",
+                "prompt": (
+                    "You are LexAI, an AI legal/document intelligence assistant.\n\n"
+                    "Summarize the following document page clearly and concisely.\n\n"
+                    "Focus on important facts, topics, requirements, dates, entities, "
+                    "decisions, and other meaningful information present on the page.\n\n"
+                    "Do not invent information.\n"
+                    "Use ONLY the provided page text.\n\n"
+                    f"PAGE {page_number} TEXT:\n"
+                    f"{page_text}"
+                ),
+                "stream": False
+            },
+            timeout=120
         )
 
-        summary = response.text
+        ollama_response.raise_for_status()
+
+        summary = ollama_response.json().get("response")
 
         if not summary:
+            raise Exception("Ollama returned an empty summary")
 
-            summary = (
-                "I was unable to generate a summary "
-                "for this page."
-            )
+        print("Ollama page summary generated successfully")
 
     except Exception as error:
-
-        print(
-            "Gemini page summary error:",
-            error
-        )
+        print("Ollama page summary error:", error)
 
         raise HTTPException(
             status_code=500,
             detail="Failed to generate page summary."
         )
-
     return {
         "message": "Page summary generated successfully",
         "document_id": document_id,
