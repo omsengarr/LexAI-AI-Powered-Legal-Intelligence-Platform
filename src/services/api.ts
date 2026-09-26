@@ -360,3 +360,67 @@ export async function loginUser(
 
   return data;
 }
+
+export async function analyzeDocumentCompliance(
+  documentId: number,
+  regulation: string,
+  lockedPages: number[] = []
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${documentId}/compliance`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        regulation,
+        locked_pages: lockedPages,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.detail || "Failed to analyze document compliance."
+    );
+  }
+
+  return data;
+}
+
+// ========================================
+// AI CASE COMPARISON
+// ========================================
+
+export async function compareCases(
+  case1Id: number,
+  case2Id: number
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/cases/compare`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        case1_id: case1Id,
+        case2_id: case2Id,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.detail ||
+        "Failed to compare the selected cases."
+    );
+  }
+
+  return data;
+}
