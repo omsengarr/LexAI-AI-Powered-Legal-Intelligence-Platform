@@ -18,15 +18,14 @@ from google import genai
 # ========================================
 
 load_dotenv()
-
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
 # ========================================
 # Gemini Client
 # ========================================
 
-gemini_client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+
 
 
 # ========================================
@@ -1115,9 +1114,9 @@ def chat(
         print("Trying local Ollama model: llama3.2:latest")
 
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": (
                     "You are LexAI, an AI legal assistant. "
                     "Provide clear, concise and educational "
@@ -1642,9 +1641,9 @@ def analyze_document_pages(
         print("Trying local Ollama model: llama3.2:latest")
 
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False
             },
@@ -1899,9 +1898,9 @@ UNLOCKED DOCUMENT PAGES:
         print("Trying local Ollama model: llama3.2:latest")
 
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False
             },
@@ -2188,9 +2187,9 @@ UNLOCKED DOCUMENT PAGES:
         print("Starting Ollama risk analysis...")
 
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False,
                 "format": "json",
@@ -3290,9 +3289,9 @@ def ask_document(
         print("Starting Ollama document analysis...")
 
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False
             },
@@ -3459,9 +3458,9 @@ def summarize_document_page(
         print("Trying local Ollama model: llama3.2:latest")
 
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            OLLAMA_BASE_URL + "/api/generate",
             json={
-                "model": "llama3.2:latest",
+                "model": OLLAMA_MODEL,
                 "prompt": (
                     "You are LexAI, an AI legal/document intelligence assistant.\n\n"
                     "Summarize the following document page clearly and concisely.\n\n"

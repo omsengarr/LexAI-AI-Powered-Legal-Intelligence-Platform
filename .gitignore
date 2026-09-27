@@ -35,3 +35,12 @@ backend/uploads/
 .env
 .env.*
 !.env.example
+# Local database
+backend/*.db
+
+# Local backup files
+backend/*.backup
+backend/*.before_*
+src/services/*.backup
+# Duplicate local project backup
+/LexAI-AI-Powered-Legal-Intelligence-Platform/
