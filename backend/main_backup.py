@@ -453,11 +453,6 @@ async def upload_document(
 
 # ========================================
 # Get All Documents
-#
-# Returns only the latest database record
-# for each unique filename.
-# This prevents duplicate documents from
-# appearing in the frontend dropdown.
 # ========================================
 
 @app.get("/documents")
@@ -468,33 +463,12 @@ def get_documents(
     documents = (
         db.query(Document)
         .order_by(
-            Document.filename.asc(),
             Document.uploaded_at.desc()
         )
         .all()
     )
 
-    unique_documents = []
-    seen_filenames = set()
-
-    for document in documents:
-
-        filename = document.filename.strip()
-
-        if filename in seen_filenames:
-            continue
-
-        seen_filenames.add(filename)
-        unique_documents.append(document)
-
-    # Keep newest documents first, matching
-    # the previous API behavior.
-    unique_documents.sort(
-        key=lambda document: document.uploaded_at,
-        reverse=True
-    )
-
-    return unique_documents
+    return documents
 
 
 # ========================================
@@ -552,469 +526,6 @@ def delete_document(
         "message": "Document deleted successfully",
         "document_id": document_id,
         "filename": filename
-    }
-
-
-# ========================================
-# Compare Two Legal Cases
-#
-# Uses only the information stored in the
-# selected case records.
-# ========================================
-
-class CaseComparisonRequest(BaseModel):
-    case1_id: int
-    case2_id: int
-
-
-@app.post("/cases/compare")
-def compare_cases(
-    request: CaseComparisonRequest,
-    db: Session = Depends(get_db)
-):
-
-    # ----------------------------------------
-    # Prevent comparing the same case
-    # ----------------------------------------
-
-    if request.case1_id == request.case2_id:
-
-        raise HTTPException(
-            status_code=400,
-            detail="Please select two different cases."
-        )
-
-    # ----------------------------------------
-    # Fetch Case 1
-    # ----------------------------------------
-
-    case1 = (
-        db.query(Case)
-        .filter(
-            Case.id == request.case1_id
-        )
-        .first()
-    )
-
-    if case1 is None:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Case 1 not found."
-        )
-
-    # ----------------------------------------
-    # Fetch Case 2
-    # ----------------------------------------
-
-    case2 = (
-        db.query(Case)
-        .filter(
-            Case.id == request.case2_id
-        )
-        .first()
-    )
-
-    if case2 is None:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Case 2 not found."
-        )
-
-    # ----------------------------------------
-    # Build comparison context
-    # ----------------------------------------
-
-    case1_context = f"""
-CASE 1
-
-Case Number:
-{case1.case_number}
-
-Title:
-{case1.title}
-
-Court:
-{case1.court or "Not available"}
-
-Case Type:
-{case1.case_type or "Not available"}
-
-Status:
-{case1.status or "Not available"}
-
-Description:
-{case1.description or "No description available"}
-
-Created:
-{case1.created_at}
-"""
-
-    case2_context = f"""
-CASE 2
-
-Case Number:
-{case2.case_number}
-
-Title:
-{case2.title}
-
-Court:
-{case2.court or "Not available"}
-
-Case Type:
-{case2.case_type or "Not available"}
-
-Status:
-{case2.status or "Not available"}
-
-Description:
-{case2.description or "No description available"}
-
-Created:
-{case2.created_at}
-"""
-
-    # ----------------------------------------
-    # Gemini prompt
-    # ----------------------------------------
-
-    prompt = f"""
-You are LexAI, an AI-powered legal case
-comparison assistant.
-
-Compare the two case records provided below.
-
-IMPORTANT:
-
-Use ONLY the information explicitly provided
-in the case records.
-
-Do NOT:
-
-- Invent facts.
-- Invent judgments.
-- Invent legal provisions.
-- Invent court decisions.
-- Assume facts that are not provided.
-- Claim that the cases are legally related unless
-  the provided information supports that conclusion.
-- Present general legal knowledge as if it came
-  from either case.
-
-The available information may be limited.
-
-If something cannot be determined from the
-available information, clearly say so.
-
-Analyze the cases across these areas:
-
-1. Basic Information
-2. Court and Case Type
-3. Status
-4. Description / Subject Matter
-5. Similarities
-6. Differences
-7. Important Observations
-
-Return ONLY valid JSON.
-
-Use exactly this structure:
-
-{{
-  "overview": "Short neutral overview of the comparison.",
-  "similarities": [
-    "Similarity 1",
-    "Similarity 2"
-  ],
-  "differences": [
-    {{
-      "category": "Category",
-      "case1": "Case 1 information",
-      "case2": "Case 2 information"
-    }}
-  ],
-  "observations": [
-    "Observation 1",
-    "Observation 2"
-  ]
-}}
-
-If there are no meaningful similarities,
-return:
-
-"similarities": []
-
-If there are no meaningful differences,
-return:
-
-"differences": []
-
-If there are no meaningful observations,
-return:
-
-"observations": []
-
-Do not use Markdown.
-Do not use JSON code fences.
-
-CASE INFORMATION:
-
-{case1_context}
-
-{case2_context}
-"""
-
-    # ----------------------------------------
-    # Gemini Interactions API
-    # ----------------------------------------
-
-    try:
-
-        print(
-            "Generating AI case comparison "
-            "using Gemini Interactions API..."
-        )
-
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
-        )
-
-        ai_result = (
-            interaction.output_text
-            if interaction
-            and interaction.output_text
-            else None
-        )
-
-        if not ai_result:
-
-            raise ValueError(
-                "Gemini returned an empty comparison response."
-            )
-
-    except Exception as error:
-
-        print(
-            "Gemini case comparison error:",
-            error
-        )
-
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "The LexAI AI comparison service is "
-                "temporarily unavailable. "
-                "Please try again in a moment."
-            )
-        )
-
-    # ----------------------------------------
-    # Parse JSON
-    # ----------------------------------------
-
-    import json
-    import re
-
-    cleaned_result = ai_result.strip()
-
-    cleaned_result = re.sub(
-        r"^```json\s*",
-        "",
-        cleaned_result,
-        flags=re.IGNORECASE
-    )
-
-    cleaned_result = re.sub(
-        r"^```\s*",
-        "",
-        cleaned_result
-    )
-
-    cleaned_result = re.sub(
-        r"\s*```$",
-        "",
-        cleaned_result
-    )
-
-    cleaned_result = cleaned_result.strip()
-
-    try:
-
-        comparison_data = json.loads(
-            cleaned_result
-        )
-
-    except json.JSONDecodeError:
-
-        try:
-
-            start_index = cleaned_result.find("{")
-            end_index = cleaned_result.rfind("}")
-
-            if (
-                start_index == -1
-                or end_index == -1
-                or end_index <= start_index
-            ):
-
-                raise ValueError(
-                    "No JSON object found."
-                )
-
-            comparison_data = json.loads(
-                cleaned_result[
-                    start_index:end_index + 1
-                ]
-            )
-
-        except Exception as error:
-
-            print(
-                "Gemini returned invalid comparison JSON:",
-                error
-            )
-
-            print(
-                "Gemini raw comparison response:",
-                ai_result
-            )
-
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    "Gemini returned an invalid "
-                    "case comparison response."
-                )
-            )
-
-    # ----------------------------------------
-    # Normalize response
-    # ----------------------------------------
-
-    overview = str(
-        comparison_data.get(
-            "overview",
-            "No comparison overview was generated."
-        )
-    ).strip()
-
-    raw_similarities = comparison_data.get(
-        "similarities",
-        []
-    )
-
-    if not isinstance(
-        raw_similarities,
-        list
-    ):
-        raw_similarities = []
-
-    similarities = [
-        str(item).strip()
-        for item in raw_similarities
-        if str(item).strip()
-    ]
-
-    raw_differences = comparison_data.get(
-        "differences",
-        []
-    )
-
-    if not isinstance(
-        raw_differences,
-        list
-    ):
-        raw_differences = []
-
-    differences = []
-
-    for item in raw_differences:
-
-        if not isinstance(
-            item,
-            dict
-        ):
-            continue
-
-        category = str(
-            item.get(
-                "category",
-                "General"
-            )
-        ).strip()
-
-        case1_information = str(
-            item.get(
-                "case1",
-                "Not available"
-            )
-        ).strip()
-
-        case2_information = str(
-            item.get(
-                "case2",
-                "Not available"
-            )
-        ).strip()
-
-        differences.append(
-            {
-                "category": (
-                    category
-                    or "General"
-                ),
-                "case1": (
-                    case1_information
-                    or "Not available"
-                ),
-                "case2": (
-                    case2_information
-                    or "Not available"
-                )
-            }
-        )
-
-    raw_observations = comparison_data.get(
-        "observations",
-        []
-    )
-
-    if not isinstance(
-        raw_observations,
-        list
-    ):
-        raw_observations = []
-
-    observations = [
-        str(item).strip()
-        for item in raw_observations
-        if str(item).strip()
-    ]
-
-    return {
-        "success": True,
-        "message": (
-            "AI case comparison generated successfully."
-        ),
-        "case1": {
-            "id": case1.id,
-            "case_number": case1.case_number,
-            "title": case1.title,
-        },
-        "case2": {
-            "id": case2.id,
-            "case_number": case2.case_number,
-            "title": case2.title,
-        },
-        "comparison": {
-            "overview": overview,
-            "similarities": similarities,
-            "differences": differences,
-            "observations": observations,
-        }
     }
 
 
@@ -2819,48 +2330,61 @@ UNLOCKED DOCUMENT PAGES:
 {compliance_context}
 """
 
-    # ----------------------------------------
-    # Gemini Interactions API
-    #
-    # gemini-3.6-flash is currently available
-    # for this API key through the Interactions API.
-    # ----------------------------------------
+    models_to_try = [
+        "gemini-3.5-flash",
+        "gemini-2.5-flash",
+    ]
 
     ai_result = None
+    last_error = None
 
-    try:
+    for model_name in models_to_try:
+        for attempt in range(2):
+            try:
+                print(
+                    f"Trying Gemini compliance analysis model: "
+                    f"{model_name} "
+                    f"(attempt {attempt + 1}/2)"
+                )
+
+                response = gemini_client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+
+                ai_result = (
+                    response.text
+                    if response and response.text
+                    else None
+                )
+
+                if ai_result:
+                    print(
+                        "Gemini compliance analysis generated "
+                        f"successfully using {model_name}"
+                    )
+                    break
+
+            except Exception as error:
+                last_error = error
+                print(
+                    f"Gemini compliance analysis error using "
+                    f"{model_name} "
+                    f"(attempt {attempt + 1}/2):",
+                    error
+                )
+
+                if attempt == 0:
+                    time.sleep(1)
+
+        if ai_result:
+            break
+
+    if not ai_result:
         print(
-            "Trying Gemini Interactions API for "
-            "compliance analysis using gemini-3.6-flash..."
+            "All Gemini compliance analysis attempts failed:",
+            last_error
         )
-
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
-        )
-
-        ai_result = (
-            interaction.output_text
-            if interaction and interaction.output_text
-            else None
-        )
-
-        if not ai_result:
-            raise ValueError(
-                "Gemini returned an empty compliance response."
-            )
-
-        print(
-            "Gemini compliance analysis generated "
-            "successfully using Gemini Interactions API."
-        )
-
-    except Exception as error:
-        print(
-            "Gemini compliance analysis error:",
-            error
-        )
-
         raise HTTPException(
             status_code=503,
             detail=(
