@@ -37,6 +37,6 @@ typing-inspection==0.4.4
 typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.52.4
-websockets==16.1.1
+websockets==15.0.1
 wheel==0.48.0
 supabase==2.31.0
