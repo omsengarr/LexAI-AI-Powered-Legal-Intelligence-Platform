@@ -9,8 +9,9 @@ import os
 import time
 import json
 import re
+import requests
 from dotenv import load_dotenv
-from google import genai
+
 
 
 # ========================================
@@ -21,8 +22,18 @@ load_dotenv()
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
+# Ollama Cloud API authentication.
+# If no API key is configured, the headers remain empty so local
+# Ollama continues to work exactly as before.
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
+OLLAMA_HEADERS = (
+    {"Authorization": f"Bearer {OLLAMA_API_KEY}"}
+    if OLLAMA_API_KEY
+    else {}
+)
+
 # ========================================
-# Gemini Client
+# Ollama Client
 # ========================================
 
 
@@ -678,7 +689,7 @@ Created:
 """
 
     # ----------------------------------------
-    # Gemini prompt
+    # Ollama prompt
     # ----------------------------------------
 
     prompt = f"""
@@ -768,38 +779,46 @@ CASE INFORMATION:
 """
 
     # ----------------------------------------
-    # Gemini Interactions API
+    # Ollama Interactions API
     # ----------------------------------------
 
     try:
 
         print(
-            "Generating AI case comparison "
-            "using Gemini Interactions API..."
+            "ollama AI case comparison "
+            "using Ollama API..."
         )
 
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
+        ollama_response = requests.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            headers=OLLAMA_HEADERS,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+                "options": {
+                    "temperature": 0.1
+                }
+            },
+            timeout=180
         )
 
-        ai_result = (
-            interaction.output_text
-            if interaction
-            and interaction.output_text
-            else None
-        )
+        ollama_response.raise_for_status()
+
+        ollama_data = ollama_response.json()
+
+        ai_result = ollama_data.get("response")
 
         if not ai_result:
-
             raise ValueError(
-                "Gemini returned an empty comparison response."
+                "Ollama returned an empty comparison response."
             )
 
     except Exception as error:
 
         print(
-            "Gemini case comparison error:",
+            "Ollama case comparison error:",
             error
         )
 
@@ -874,19 +893,19 @@ CASE INFORMATION:
         except Exception as error:
 
             print(
-                "Gemini returned invalid comparison JSON:",
+                "Ollama returned invalid comparison JSON:",
                 error
             )
 
             print(
-                "Gemini raw comparison response:",
+                "Ollama raw comparison response:",
                 ai_result
             )
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "case comparison response."
                 )
             )
@@ -1115,6 +1134,7 @@ def chat(
 
         response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": (
@@ -1642,6 +1662,7 @@ def analyze_document_pages(
 
         ollama_response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
@@ -1691,7 +1712,7 @@ def analyze_document_pages(
 # SUMMARIZE ENTIRE DOCUMENT
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 # ========================================
 
 @app.post("/documents/{document_id}/summary")
@@ -1899,6 +1920,7 @@ UNLOCKED DOCUMENT PAGES:
 
         ollama_response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
@@ -1952,7 +1974,7 @@ UNLOCKED DOCUMENT PAGES:
 # AI RISK ANALYSIS
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 # ========================================
 
 @app.post("/documents/{document_id}/risk-analysis")
@@ -2188,6 +2210,7 @@ UNLOCKED DOCUMENT PAGES:
 
         ollama_response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
@@ -2279,19 +2302,19 @@ UNLOCKED DOCUMENT PAGES:
         except Exception as error:
 
             print(
-                "Gemini returned invalid risk JSON:",
+                "Ollama returned invalid risk JSON:",
                 error
             )
 
             print(
-                "Gemini raw response:",
+                "Ollama raw response:",
                 ai_result
             )
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "risk analysis response."
                 )
             )
@@ -2506,7 +2529,7 @@ UNLOCKED DOCUMENT PAGES:
 # AI COMPLIANCE ANALYSIS
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 #
 # Supported frameworks:
 # GDPR
@@ -2735,44 +2758,53 @@ UNLOCKED DOCUMENT PAGES:
 """
 
     # ----------------------------------------
-    # Gemini Interactions API
+    # Ollama API
     #
-    # gemini-3.6-flash is currently available
-    # for this API key through the Interactions API.
+    # ollama-3.6-flash is currently available
+    # for this API key through the Ollamas API.
     # ----------------------------------------
 
     ai_result = None
 
     try:
         print(
-            "Trying Gemini Interactions API for "
-            "compliance analysis using gemini-3.6-flash..."
+            "Trying Ollama API for "
+            "compliance analysis using ollama-3.6-flash..."
+        )
+        ollama_response = requests.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            headers=OLLAMA_HEADERS,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+                "options": {
+                    "temperature": 0.1
+                }
+            },
+            timeout=180
         )
 
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
-        )
+        ollama_response.raise_for_status()
 
-        ai_result = (
-            interaction.output_text
-            if interaction and interaction.output_text
-            else None
-        )
+        ollama_data = ollama_response.json()
+
+        ai_result = ollama_data.get("response")
 
         if not ai_result:
             raise ValueError(
-                "Gemini returned an empty compliance response."
+                "Ollama returned an empty compliance response."
             )
 
         print(
-            "Gemini compliance analysis generated "
-            "successfully using Gemini Interactions API."
+            "O compliance analysis generated "
+            "successfully using configured Ollama model."
         )
 
     except Exception as error:
         print(
-            "Gemini compliance analysis error:",
+            "Ollama compliance analysis error:",
             error
         )
 
@@ -2835,17 +2867,17 @@ UNLOCKED DOCUMENT PAGES:
 
         except Exception as error:
             print(
-                "Gemini returned invalid compliance JSON:",
+                "Ollama returned invalid compliance JSON:",
                 error
             )
             print(
-                "Gemini raw response:",
+                "Ollama raw response:",
                 ai_result
             )
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "compliance analysis response."
                 )
             )
@@ -3290,6 +3322,7 @@ def ask_document(
 
         ollama_response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
@@ -3459,6 +3492,7 @@ def summarize_document_page(
 
         ollama_response = requests.post(
             OLLAMA_BASE_URL + "/api/generate",
+            headers=OLLAMA_HEADERS,
             json={
                 "model": OLLAMA_MODEL,
                 "prompt": (
