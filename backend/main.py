@@ -8,9 +8,9 @@ import shutil
 import os
 import time
 import json
+from datetime import datetime
 import re
 from dotenv import load_dotenv
-from google import genai
 
 
 # ========================================
@@ -33,7 +33,14 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 # ========================================
 
 from database import Base, SessionLocal, engine
-from models import User, Document, AIQuery, Case, DocumentChunk
+from models import (
+    User,
+    Document,
+    AIQuery,
+    Case,
+    DocumentChunk,
+    AIActivityHistory,
+)
 
 
 # ========================================
@@ -277,6 +284,22 @@ class ComplianceRequest(BaseModel):
     locked_pages: List[int] = Field(
         default_factory=list
     )
+
+
+# ========================================
+# AI Activity History Request Model
+# ========================================
+
+class AIActivityHistoryRequest(BaseModel):
+    activity_type: str
+    title: str
+    document_id: int | None = None
+    document_name: str | None = None
+    query: str | None = None
+    regulation: str | None = None
+    status: str = "running"
+    result: dict | list | str | None = None
+    error: str | None = None
 
 
 # ========================================
@@ -768,47 +791,53 @@ CASE INFORMATION:
 """
 
     # ----------------------------------------
-    # Gemini Interactions API
+    # Ollama AI Case Comparison
     # ----------------------------------------
 
     try:
 
+        import requests
+
         print(
             "Generating AI case comparison "
-            "using Gemini Interactions API..."
+            "using Ollama..."
         )
 
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
+        ollama_response = requests.post(
+            OLLAMA_BASE_URL + "/api/generate",
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=120
         )
 
-        ai_result = (
-            interaction.output_text
-            if interaction
-            and interaction.output_text
-            else None
-        )
+        ollama_response.raise_for_status()
+
+        ollama_data = ollama_response.json()
+
+        ai_result = ollama_data.get("response")
 
         if not ai_result:
 
             raise ValueError(
-                "Gemini returned an empty comparison response."
+                "Ollama returned an empty comparison response."
             )
 
     except Exception as error:
 
         print(
-            "Gemini case comparison error:",
+            "Ollama case comparison error:",
             error
         )
 
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI comparison service is "
+                "The LexAI local AI comparison service is "
                 "temporarily unavailable. "
-                "Please try again in a moment."
+                "Please make sure Ollama is running."
             )
         )
 
@@ -874,19 +903,19 @@ CASE INFORMATION:
         except Exception as error:
 
             print(
-                "Gemini returned invalid comparison JSON:",
+                "Ollama returned invalid comparison JSON:",
                 error
             )
 
             print(
-                "Gemini raw comparison response:",
+                "Ollama raw comparison response:",
                 ai_result
             )
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "case comparison response."
                 )
             )
@@ -1016,6 +1045,251 @@ CASE INFORMATION:
             "differences": differences,
             "observations": observations,
         }
+    }
+
+
+# ========================================
+# AI Activity History
+#
+# Stores and retrieves records of AI work
+# performed in LexAI.
+# ========================================
+
+@app.post("/ai-history")
+def create_ai_history(
+    history_data: AIActivityHistoryRequest,
+    db: Session = Depends(get_db)
+):
+    activity_type = history_data.activity_type.strip()
+    title = history_data.title.strip()
+    status = history_data.status.strip().lower()
+
+    if not activity_type:
+        raise HTTPException(status_code=400, detail="activity_type cannot be empty.")
+
+    if not title:
+        raise HTTPException(status_code=400, detail="title cannot be empty.")
+
+    allowed_statuses = {"queued", "running", "completed", "failed"}
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status. Use queued, running, completed, or failed."
+        )
+
+    now = datetime.utcnow()
+
+    history = AIActivityHistory(
+        activity_type=activity_type,
+        title=title,
+        document_id=history_data.document_id,
+        document_name=history_data.document_name.strip() if history_data.document_name else None,
+        query=history_data.query.strip() if history_data.query else None,
+        regulation=history_data.regulation.strip().upper() if history_data.regulation else None,
+        status=status,
+        result=history_data.result,
+        error=history_data.error.strip() if history_data.error else None,
+        created_at=now,
+        completed_at=now if status in {"completed", "failed"} else None,
+    )
+
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+
+    return {
+        "success": True,
+        "message": "AI activity history created successfully.",
+        "history": history,
+    }
+
+
+@app.get("/ai-history")
+def get_ai_history(
+    activity_type: str = "",
+    status: str = "",
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    if limit < 1:
+        limit = 1
+
+    if limit > 500:
+        limit = 500
+
+    query = db.query(AIActivityHistory)
+
+    if activity_type.strip():
+        query = query.filter(
+            AIActivityHistory.activity_type == activity_type.strip()
+        )
+
+    if status.strip():
+        normalized_status = status.strip().lower()
+        allowed_statuses = {"queued", "running", "completed", "failed"}
+
+        if normalized_status not in allowed_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid status. Use queued, running, completed, or failed.",
+            )
+
+        query = query.filter(
+            AIActivityHistory.status == normalized_status
+        )
+
+    history_records = (
+        query.order_by(AIActivityHistory.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "success": True,
+        "total": len(history_records),
+        "history": history_records,
+    }
+
+
+@app.get("/ai-history/{history_id}")
+def get_ai_history_record(
+    history_id: int,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    return {
+        "success": True,
+        "history": history,
+    }
+
+
+@app.put("/ai-history/{history_id}")
+def update_ai_history(
+    history_id: int,
+    history_data: AIActivityHistoryRequest,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    status = history_data.status.strip().lower()
+    allowed_statuses = {"queued", "running", "completed", "failed"}
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status. Use queued, running, completed, or failed.",
+        )
+
+    if history_data.activity_type.strip():
+        history.activity_type = history_data.activity_type.strip()
+
+    if history_data.title.strip():
+        history.title = history_data.title.strip()
+
+    history.document_id = history_data.document_id
+    history.document_name = (
+        history_data.document_name.strip()
+        if history_data.document_name
+        else None
+    )
+    history.query = (
+        history_data.query.strip()
+        if history_data.query
+        else None
+    )
+    history.regulation = (
+        history_data.regulation.strip().upper()
+        if history_data.regulation
+        else None
+    )
+    history.status = status
+    history.result = history_data.result
+    history.error = (
+        history_data.error.strip()
+        if history_data.error
+        else None
+    )
+
+    history.completed_at = (
+        datetime.utcnow()
+        if status in {"completed", "failed"}
+        else None
+    )
+
+    db.commit()
+    db.refresh(history)
+
+    return {
+        "success": True,
+        "message": "AI activity history updated successfully.",
+        "history": history,
+    }
+
+
+@app.delete("/ai-history/{history_id}")
+def delete_ai_history(
+    history_id: int,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    db.delete(history)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "AI activity history deleted successfully.",
+        "history_id": history_id,
+    }
+
+
+@app.delete("/ai-history")
+def delete_all_ai_history(
+    db: Session = Depends(get_db),
+):
+    deleted_count = (
+        db.query(AIActivityHistory)
+        .delete(synchronize_session=False)
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "All AI activity history deleted successfully.",
+        "deleted_count": deleted_count,
     }
 
 
@@ -1691,7 +1965,7 @@ def analyze_document_pages(
 # SUMMARIZE ENTIRE DOCUMENT
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 # ========================================
 
 @app.post("/documents/{document_id}/summary")
@@ -1952,7 +2226,7 @@ UNLOCKED DOCUMENT PAGES:
 # AI RISK ANALYSIS
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 # ========================================
 
 @app.post("/documents/{document_id}/risk-analysis")
@@ -2279,19 +2553,19 @@ UNLOCKED DOCUMENT PAGES:
         except Exception as error:
 
             print(
-                "Gemini returned invalid risk JSON:",
+                "Ollama returned invalid risk JSON:",
                 error
             )
 
             print(
-                "Gemini raw response:",
+                "Ollama raw response:",
                 ai_result
             )
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "risk analysis response."
                 )
             )
@@ -2506,7 +2780,7 @@ UNLOCKED DOCUMENT PAGES:
 # AI COMPLIANCE ANALYSIS
 #
 # PRIVACY:
-# Only unlocked pages are sent to Gemini.
+# Only unlocked pages are sent to Ollama.
 #
 # Supported frameworks:
 # GDPR
@@ -2735,52 +3009,60 @@ UNLOCKED DOCUMENT PAGES:
 """
 
     # ----------------------------------------
-    # Gemini Interactions API
-    #
-    # gemini-3.6-flash is currently available
-    # for this API key through the Interactions API.
+    # Ollama AI Compliance Analysis
     # ----------------------------------------
 
     ai_result = None
 
     try:
+        import requests
+
         print(
-            "Trying Gemini Interactions API for "
-            "compliance analysis using gemini-3.6-flash..."
+            "Trying Ollama for "
+            "compliance analysis..."
         )
 
-        interaction = gemini_client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt
+        ollama_response = requests.post(
+            OLLAMA_BASE_URL + "/api/generate",
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+                "options": {
+                    "temperature": 0.1
+                }
+            },
+            timeout=300
         )
 
-        ai_result = (
-            interaction.output_text
-            if interaction and interaction.output_text
-            else None
-        )
+        ollama_response.raise_for_status()
+
+        ollama_data = ollama_response.json()
+
+        ai_result = ollama_data.get("response")
 
         if not ai_result:
             raise ValueError(
-                "Gemini returned an empty compliance response."
+                "Ollama returned an empty compliance response."
             )
 
         print(
-            "Gemini compliance analysis generated "
-            "successfully using Gemini Interactions API."
+            "Ollama compliance analysis generated "
+            "successfully."
         )
 
     except Exception as error:
         print(
-            "Gemini compliance analysis error:",
+            "Ollama compliance analysis error:",
             error
         )
 
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI service is temporarily "
-                "unavailable. Please try again in a moment."
+                "The LexAI local AI service is temporarily "
+                "unavailable. Please make sure Ollama is running."
             )
         )
 
@@ -2835,17 +3117,17 @@ UNLOCKED DOCUMENT PAGES:
 
         except Exception as error:
             print(
-                "Gemini returned invalid compliance JSON:",
+                "Ollama returned invalid compliance JSON:",
                 error
             )
             print(
-                "Gemini raw response:",
+                "Ollama raw response:",
                 ai_result
             )
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Gemini returned an invalid "
+                    "Ollama returned an invalid "
                     "compliance analysis response."
                 )
             )

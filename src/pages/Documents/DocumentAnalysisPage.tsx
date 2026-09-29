@@ -586,8 +586,6 @@ export default function DocumentAnalysisPage() {
 
         /* =====================================================
            LIGHT MODE
-
-           Keep the existing design exactly as light mode.
         ====================================================== */
 
         html.light .document-analysis-page {
@@ -784,7 +782,14 @@ export default function DocumentAnalysisPage() {
 
                 <div className="p-5 sm:p-6 lg:p-7">
 
-                  <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+                  {/* FIX:
+                      Keep the document information and action buttons
+                      in separate responsive rows so the Analyze button
+                      can never overflow outside the card.
+                  */}
+                  <div className="flex flex-col gap-6">
+
+                    {/* DOCUMENT INFORMATION */}
 
                     <div className="min-w-0">
 
@@ -796,7 +801,7 @@ export default function DocumentAnalysisPage() {
 
                         </div>
 
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
 
                           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-500">
                             Active document
@@ -847,7 +852,9 @@ export default function DocumentAnalysisPage() {
                       </div>
                     </div>
 
-                    <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                    {/* ACTION BUTTONS */}
+
+                    <div className="flex w-full flex-wrap gap-3">
 
                       <button
                         type="button"
@@ -859,7 +866,7 @@ export default function DocumentAnalysisPage() {
                           pages.length === 0 ||
                           allPagesLocked
                         }
-                        className="group inline-flex min-h-[50px] flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:flex-none"
+                        className="group inline-flex min-h-[50px] min-w-[220px] flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                       >
 
                         {summarizing ? (
@@ -884,7 +891,7 @@ export default function DocumentAnalysisPage() {
                           pages.length === 0 ||
                           allPagesLocked
                         }
-                        className="group inline-flex min-h-[50px] flex-1 items-center justify-center gap-2 rounded-2xl border border-purple-400/30 bg-purple-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-purple-400 hover:shadow-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:flex-none"
+                        className="group inline-flex min-h-[50px] min-w-[220px] flex-1 items-center justify-center gap-2 rounded-2xl border border-purple-400/30 bg-purple-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-purple-400 hover:shadow-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                       >
 
                         {analyzing ? (
@@ -900,6 +907,7 @@ export default function DocumentAnalysisPage() {
                       </button>
 
                     </div>
+
                   </div>
 
                   <div

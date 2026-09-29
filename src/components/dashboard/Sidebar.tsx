@@ -22,6 +22,8 @@ import {
   Zap,
 } from "lucide-react";
 
+import { useUserPreferences } from "../../context/UserPreferencesContext";
+
 interface NavItem {
   label: string;
   path: string;
@@ -43,19 +45,19 @@ const navSections: NavSection[] = [
         icon: LayoutDashboard,
       },
       {
-       label: "Documents",
-       path: "/documents/upload",
-       icon: FileText,
+        label: "Documents",
+        path: "/documents/upload",
+        icon: FileText,
       },
       {
-       label: "Page Lock & Analysis",
-       path: "/documents/analyze",
-       icon: LockKeyhole,
+        label: "Page Lock & Analysis",
+        path: "/documents/analyze",
+        icon: LockKeyhole,
       },
       {
-       label: "AI Chat",
-       path: "/chat",
-       icon: MessageSquare,
+        label: "AI Chat",
+        path: "/chat",
+        icon: MessageSquare,
       },
       {
         label: "Case Search",
@@ -117,6 +119,8 @@ function Sidebar({
 }: SidebarProps) {
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
 
+  const { profile } = useUserPreferences();
+
   const mobileOpen =
     controlledMobileOpen !== undefined
       ? controlledMobileOpen
@@ -126,7 +130,13 @@ function Sidebar({
     controlledSetMobileOpen || setInternalMobileOpen;
 
   const userEmail =
-    localStorage.getItem("lexai_user_email") || "admin@lexai.demo";
+    profile.email || "admin@lexai.demo";
+
+  const profileName =
+    profile.fullName.trim() || userEmail;
+
+  const avatarInitial =
+    profileName.charAt(0).toUpperCase() || "L";
 
   const handleLogout = () => {
     localStorage.removeItem("lexai_authenticated");
@@ -447,6 +457,7 @@ function Sidebar({
               shrink-0
               items-center
               justify-center
+              overflow-hidden
               rounded-xl
               bg-gradient-to-br
               from-cyan-400
@@ -456,16 +467,24 @@ function Sidebar({
               text-white
             "
           >
-            {userEmail.charAt(0).toUpperCase()}
+            {profile.photo ? (
+              <img
+                src={profile.photo}
+                alt={profileName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              avatarInitial
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-slate-300">
-              {userEmail}
+              {profileName}
             </p>
 
             <p className="mt-0.5 text-[10px] text-slate-600">
-              Workspace administrator
+              {profile.role || "Workspace administrator"}
             </p>
           </div>
         </div>

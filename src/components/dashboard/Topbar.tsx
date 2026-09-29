@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 
+import { useUserPreferences } from "../../context/UserPreferencesContext";
+
 interface TopbarProps {
   children?: ReactNode;
 }
@@ -91,6 +93,8 @@ const searchItems: SearchItem[] = [
 function Topbar({ children }: TopbarProps) {
   const navigate = useNavigate();
 
+  const { profile } = useUserPreferences();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -100,8 +104,13 @@ function Topbar({ children }: TopbarProps) {
   const notificationRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
 
-  const userEmail =
-    localStorage.getItem("lexai_user_email") || "admin@lexai.demo";
+  const userEmail = profile.email || "admin@lexai.demo";
+
+  const profileName =
+    profile.fullName.trim() || userEmail;
+
+  const avatarInitial =
+    profileName.charAt(0).toUpperCase() || "L";
 
   const filteredSearchItems =
     searchQuery.trim().length === 0
@@ -160,7 +169,10 @@ function Topbar({ children }: TopbarProps) {
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "k"
+      ) {
         event.preventDefault();
 
         const input = searchRef.current?.querySelector(
@@ -258,7 +270,9 @@ function Topbar({ children }: TopbarProps) {
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) =>
+                setSearchQuery(event.target.value)
+              }
               onFocus={() => setIsSearchFocused(true)}
               placeholder="Search anything..."
               className="
@@ -346,7 +360,9 @@ function Topbar({ children }: TopbarProps) {
                       <button
                         key={item.path}
                         type="button"
-                        onClick={() => handleSearchSelect(item.path)}
+                        onClick={() =>
+                          handleSearchSelect(item.path)
+                        }
                         className="
                           flex
                           w-full
@@ -687,6 +703,7 @@ function Topbar({ children }: TopbarProps) {
                   w-8
                   items-center
                   justify-center
+                  overflow-hidden
                   rounded-lg
                   bg-gradient-to-br
                   from-cyan-400
@@ -698,16 +715,24 @@ function Topbar({ children }: TopbarProps) {
                   shadow-cyan-500/10
                 "
               >
-                {userEmail.charAt(0).toUpperCase()}
+                {profile.photo ? (
+                  <img
+                    src={profile.photo}
+                    alt={profileName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  avatarInitial
+                )}
               </div>
 
               <div className="hidden max-w-[130px] text-left md:block">
                 <p className="truncate text-xs font-semibold text-slate-200">
-                  {userEmail}
+                  {profileName}
                 </p>
 
                 <p className="mt-0.5 text-[10px] text-slate-500">
-                  Workspace admin
+                  {profile.role || "Administrator"}
                 </p>
               </div>
 
@@ -752,8 +777,10 @@ function Topbar({ children }: TopbarProps) {
                           flex
                           h-10
                           w-10
+                          shrink-0
                           items-center
                           justify-center
+                          overflow-hidden
                           rounded-xl
                           bg-gradient-to-br
                           from-cyan-400
@@ -763,16 +790,24 @@ function Topbar({ children }: TopbarProps) {
                           text-white
                         "
                       >
-                        {userEmail.charAt(0).toUpperCase()}
+                        {profile.photo ? (
+                          <img
+                            src={profile.photo}
+                            alt={profileName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          avatarInitial
+                        )}
                       </div>
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-200">
-                          {userEmail}
+                          {profileName}
                         </p>
 
                         <p className="mt-0.5 text-xs text-slate-500">
-                          Administrator
+                          {profile.role || "Administrator"}
                         </p>
                       </div>
                     </div>

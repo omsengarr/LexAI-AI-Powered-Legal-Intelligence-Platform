@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
 from datetime import datetime
 
 from database import Base
@@ -183,4 +183,76 @@ class DocumentChunk(Base):
     text = Column(
         Text,
         nullable=False
+    )
+
+
+# ========================================
+# AI Activity History Model
+# ========================================
+
+class AIActivityHistory(Base):
+
+    __tablename__ = "ai_activity_history"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    activity_type = Column(
+        String(50),
+        nullable=False
+    )
+
+    title = Column(
+        String(255),
+        nullable=False
+    )
+
+    document_id = Column(
+        Integer,
+        nullable=True
+    )
+
+    document_name = Column(
+        String(255),
+        nullable=True
+    )
+
+    query = Column(
+        Text,
+        nullable=True
+    )
+
+    regulation = Column(
+        String(100),
+        nullable=True
+    )
+
+    status = Column(
+        String(50),
+        nullable=False,
+        default="completed"
+    )
+
+    result = Column(
+        JSON,
+        nullable=True
+    )
+
+    error = Column(
+        Text,
+        nullable=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    completed_at = Column(
+        DateTime,
+        nullable=True
     )
