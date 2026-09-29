@@ -8,6 +8,7 @@ import shutil
 import os
 import time
 import json
+from datetime import datetime
 import re
 import requests
 from dotenv import load_dotenv
@@ -44,7 +45,14 @@ OLLAMA_HEADERS = (
 # ========================================
 
 from database import Base, SessionLocal, engine
-from models import User, Document, AIQuery, Case, DocumentChunk
+from models import (
+    User,
+    Document,
+    AIQuery,
+    Case,
+    DocumentChunk,
+    AIActivityHistory,
+)
 
 
 # ========================================
@@ -288,6 +296,22 @@ class ComplianceRequest(BaseModel):
     locked_pages: List[int] = Field(
         default_factory=list
     )
+
+
+# ========================================
+# AI Activity History Request Model
+# ========================================
+
+class AIActivityHistoryRequest(BaseModel):
+    activity_type: str
+    title: str
+    document_id: int | None = None
+    document_name: str | None = None
+    query: str | None = None
+    regulation: str | None = None
+    status: str = "running"
+    result: dict | list | str | None = None
+    error: str | None = None
 
 
 # ========================================
@@ -784,6 +808,8 @@ CASE INFORMATION:
 
     try:
 
+        import requests
+
         print(
             "ollama AI case comparison "
             "using Ollama API..."
@@ -825,9 +851,9 @@ CASE INFORMATION:
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI comparison service is "
+                "The LexAI local AI comparison service is "
                 "temporarily unavailable. "
-                "Please try again in a moment."
+                "Please make sure Ollama is running."
             )
         )
 
@@ -1035,6 +1061,251 @@ CASE INFORMATION:
             "differences": differences,
             "observations": observations,
         }
+    }
+
+
+# ========================================
+# AI Activity History
+#
+# Stores and retrieves records of AI work
+# performed in LexAI.
+# ========================================
+
+@app.post("/ai-history")
+def create_ai_history(
+    history_data: AIActivityHistoryRequest,
+    db: Session = Depends(get_db)
+):
+    activity_type = history_data.activity_type.strip()
+    title = history_data.title.strip()
+    status = history_data.status.strip().lower()
+
+    if not activity_type:
+        raise HTTPException(status_code=400, detail="activity_type cannot be empty.")
+
+    if not title:
+        raise HTTPException(status_code=400, detail="title cannot be empty.")
+
+    allowed_statuses = {"queued", "running", "completed", "failed"}
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status. Use queued, running, completed, or failed."
+        )
+
+    now = datetime.utcnow()
+
+    history = AIActivityHistory(
+        activity_type=activity_type,
+        title=title,
+        document_id=history_data.document_id,
+        document_name=history_data.document_name.strip() if history_data.document_name else None,
+        query=history_data.query.strip() if history_data.query else None,
+        regulation=history_data.regulation.strip().upper() if history_data.regulation else None,
+        status=status,
+        result=history_data.result,
+        error=history_data.error.strip() if history_data.error else None,
+        created_at=now,
+        completed_at=now if status in {"completed", "failed"} else None,
+    )
+
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+
+    return {
+        "success": True,
+        "message": "AI activity history created successfully.",
+        "history": history,
+    }
+
+
+@app.get("/ai-history")
+def get_ai_history(
+    activity_type: str = "",
+    status: str = "",
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    if limit < 1:
+        limit = 1
+
+    if limit > 500:
+        limit = 500
+
+    query = db.query(AIActivityHistory)
+
+    if activity_type.strip():
+        query = query.filter(
+            AIActivityHistory.activity_type == activity_type.strip()
+        )
+
+    if status.strip():
+        normalized_status = status.strip().lower()
+        allowed_statuses = {"queued", "running", "completed", "failed"}
+
+        if normalized_status not in allowed_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid status. Use queued, running, completed, or failed.",
+            )
+
+        query = query.filter(
+            AIActivityHistory.status == normalized_status
+        )
+
+    history_records = (
+        query.order_by(AIActivityHistory.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "success": True,
+        "total": len(history_records),
+        "history": history_records,
+    }
+
+
+@app.get("/ai-history/{history_id}")
+def get_ai_history_record(
+    history_id: int,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    return {
+        "success": True,
+        "history": history,
+    }
+
+
+@app.put("/ai-history/{history_id}")
+def update_ai_history(
+    history_id: int,
+    history_data: AIActivityHistoryRequest,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    status = history_data.status.strip().lower()
+    allowed_statuses = {"queued", "running", "completed", "failed"}
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status. Use queued, running, completed, or failed.",
+        )
+
+    if history_data.activity_type.strip():
+        history.activity_type = history_data.activity_type.strip()
+
+    if history_data.title.strip():
+        history.title = history_data.title.strip()
+
+    history.document_id = history_data.document_id
+    history.document_name = (
+        history_data.document_name.strip()
+        if history_data.document_name
+        else None
+    )
+    history.query = (
+        history_data.query.strip()
+        if history_data.query
+        else None
+    )
+    history.regulation = (
+        history_data.regulation.strip().upper()
+        if history_data.regulation
+        else None
+    )
+    history.status = status
+    history.result = history_data.result
+    history.error = (
+        history_data.error.strip()
+        if history_data.error
+        else None
+    )
+
+    history.completed_at = (
+        datetime.utcnow()
+        if status in {"completed", "failed"}
+        else None
+    )
+
+    db.commit()
+    db.refresh(history)
+
+    return {
+        "success": True,
+        "message": "AI activity history updated successfully.",
+        "history": history,
+    }
+
+
+@app.delete("/ai-history/{history_id}")
+def delete_ai_history(
+    history_id: int,
+    db: Session = Depends(get_db),
+):
+    history = (
+        db.query(AIActivityHistory)
+        .filter(AIActivityHistory.id == history_id)
+        .first()
+    )
+
+    if history is None:
+        raise HTTPException(
+            status_code=404,
+            detail="AI activity history record not found.",
+        )
+
+    db.delete(history)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "AI activity history deleted successfully.",
+        "history_id": history_id,
+    }
+
+
+@app.delete("/ai-history")
+def delete_all_ai_history(
+    db: Session = Depends(get_db),
+):
+    deleted_count = (
+        db.query(AIActivityHistory)
+        .delete(synchronize_session=False)
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "All AI activity history deleted successfully.",
+        "deleted_count": deleted_count,
     }
 
 
@@ -2767,6 +3038,8 @@ UNLOCKED DOCUMENT PAGES:
     ai_result = None
 
     try:
+        import requests
+
         print(
             "Trying Ollama API for "
             "compliance analysis using ollama-3.6-flash..."
@@ -2811,8 +3084,8 @@ UNLOCKED DOCUMENT PAGES:
         raise HTTPException(
             status_code=503,
             detail=(
-                "The LexAI AI service is temporarily "
-                "unavailable. Please try again in a moment."
+                "The LexAI local AI service is temporarily "
+                "unavailable. Please make sure Ollama is running."
             )
         )
 

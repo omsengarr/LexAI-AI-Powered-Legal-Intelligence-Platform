@@ -1,6 +1,12 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import AppLayout from "../components/AppLayout";
+import ProtectedRoute from "../components/ProtectedRoute";
+
+import { AIJobProvider } from "../context/AIJobContext";
+import { UserPreferencesProvider } from "../context/UserPreferencesContext";
+
 // ========================================
 // PUBLIC PAGES
 // ========================================
@@ -109,9 +115,6 @@ const NotFoundPage = lazy(
   () => import("../pages/NotFound/NotFoundPage")
 );
 
-import AppLayout from "../components/AppLayout";
-import ProtectedRoute from "../components/ProtectedRoute";
-
 // ========================================
 // LOADING SCREEN
 // ========================================
@@ -130,6 +133,7 @@ function PageLoader() {
           <p className="text-sm font-medium text-white">
             Loading LexAI
           </p>
+
           <p className="mt-1 text-xs text-slate-500">
             Preparing your workspace...
           </p>
@@ -146,243 +150,234 @@ function PageLoader() {
 function AppRoutes() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <UserPreferencesProvider>
+        <AIJobProvider>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
 
-          {/* ======================================== */}
-          {/* PUBLIC PAGES */}
-          {/* ======================================== */}
+              {/* ======================================== */}
+              {/* PUBLIC PAGES */}
+              {/* ======================================== */}
 
-          <Route
-            path="/"
-            element={<LandingPage />}
-          />
+              <Route
+                path="/"
+                element={<LandingPage />}
+              />
 
-          <Route
-            path="/login"
-            element={<LoginPage />}
-          />
+              <Route
+                path="/login"
+                element={<LoginPage />}
+              />
 
-          <Route
-            path="/signup"
-            element={<SignupPage />}
-          />
+              <Route
+                path="/signup"
+                element={<SignupPage />}
+              />
 
+              {/* ======================================== */}
+              {/* DASHBOARD */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* DASHBOARD */}
-          {/* ======================================== */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <DashboardPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <DashboardPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              {/* ======================================== */}
+              {/* ANALYTICS */}
+              {/* ======================================== */}
 
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AnalyticsPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* ======================================== */}
-          {/* ANALYTICS */}
-          {/* ======================================== */}
+              {/* ======================================== */}
+              {/* JUDGMENT COMPARISON */}
+              {/* ======================================== */}
 
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <AnalyticsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/comparison"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <JudgmentComparisonPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
+              {/* ======================================== */}
+              {/* DOCUMENTS */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* JUDGMENT COMPARISON */}
-          {/* ======================================== */}
+              <Route
+                path="/documents"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <DocumentList />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/comparison"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <JudgmentComparisonPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/documents/upload"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <UploadDocumentPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
+              {/* ======================================== */}
+              {/* DOCUMENT ANALYSIS */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* DOCUMENTS */}
-          {/* ======================================== */}
+              <Route
+                path="/documents/analyze"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <DocumentAnalysisPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <DocumentList />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              {/* ======================================== */}
+              {/* AI CHAT */}
+              {/* ======================================== */}
 
-          <Route
-            path="/documents/upload"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <UploadDocumentPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ChatPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
+              {/* ======================================== */}
+              {/* CASE SEARCH */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* DOCUMENT ANALYSIS */}
-          {/* ======================================== */}
+              <Route
+                path="/cases"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CaseSearchPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/documents/analyze"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <DocumentAnalysisPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              {/* ======================================== */}
+              {/* CASE DETAILS */}
+              {/* ======================================== */}
 
+              <Route
+                path="/cases/:caseId"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CaseDetailsPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* ======================================== */}
-          {/* AI CHAT */}
-          {/* ======================================== */}
+              {/* ======================================== */}
+              {/* RISK ANALYSIS */}
+              {/* ======================================== */}
 
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ChatPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/risk-analysis"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RiskAnalysisPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
+              {/* ======================================== */}
+              {/* COMPLIANCE */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* CASE SEARCH */}
-          {/* ======================================== */}
+              <Route
+                path="/compliance"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CompliancePage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/cases"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CaseSearchPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              {/* ======================================== */}
+              {/* PROFILE */}
+              {/* ======================================== */}
 
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <ProfilePage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* ======================================== */}
-          {/* CASE DETAILS */}
-          {/* ======================================== */}
+              {/* ======================================== */}
+              {/* SETTINGS */}
+              {/* ======================================== */}
 
-          <Route
-            path="/cases/:caseId"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CaseDetailsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SettingsPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
+              {/* ======================================== */}
+              {/* NOT FOUND */}
+              {/* ======================================== */}
 
-          {/* ======================================== */}
-          {/* RISK ANALYSIS */}
-          {/* ======================================== */}
+              <Route
+                path="*"
+                element={<NotFoundPage />}
+              />
 
-          <Route
-            path="/risk-analysis"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <RiskAnalysisPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ======================================== */}
-          {/* COMPLIANCE */}
-          {/* ======================================== */}
-
-          <Route
-            path="/compliance"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <CompliancePage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ======================================== */}
-          {/* PROFILE */}
-          {/* ======================================== */}
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ProfilePage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ======================================== */}
-          {/* SETTINGS */}
-          {/* ======================================== */}
-
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SettingsPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ======================================== */}
-          {/* NOT FOUND */}
-          {/* ======================================== */}
-
-          <Route
-            path="*"
-            element={<NotFoundPage />}
-          />
-
-        </Routes>
-      </Suspense>
+            </Routes>
+          </Suspense>
+        </AIJobProvider>
+      </UserPreferencesProvider>
     </BrowserRouter>
   );
 }
