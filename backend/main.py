@@ -20,8 +20,15 @@ from dotenv import load_dotenv
 # ========================================
 
 load_dotenv()
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+OLLAMA_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL",
+    "https://ollama.com"
+)
+
+OLLAMA_MODEL = os.getenv(
+    "OLLAMA_MODEL",
+    "gpt-oss:20b-cloud"
+)
 
 # Ollama Cloud API authentication.
 # If no API key is configured, the headers remain empty so local
