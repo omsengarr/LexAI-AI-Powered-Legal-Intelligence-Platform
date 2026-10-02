@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { API_BASE_URL } from "../../services/api";
 import { FaCloudUploadAlt } from "react-icons/fa";
 
 function UploadZone() {
@@ -20,7 +21,7 @@ function UploadZone() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8000/upload", {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: "POST",
         body: formData,
       });

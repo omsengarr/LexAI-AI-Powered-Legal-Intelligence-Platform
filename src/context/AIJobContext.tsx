@@ -10,7 +10,7 @@
 import { useLocation } from "react-router-dom";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
 
 const JOBS_STORAGE_KEY = "lexai_ai_jobs";
 const NOTIFICATIONS_STORAGE_KEY = "lexai_ai_notifications";

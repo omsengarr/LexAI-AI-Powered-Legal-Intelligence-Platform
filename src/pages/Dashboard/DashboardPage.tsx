@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { API_BASE_URL } from "../../services/api";
 import DashboardCard from "../../components/dashboard/DashboardCard";
 import RecentActivity from "../../components/dashboard/RecentActivity";
 import QuickActions from "../../components/dashboard/QuickActions";
@@ -83,7 +83,7 @@ function DashboardPage() {
     // Get Case Count
     // ----------------------------------------
 
-    fetch("http://127.0.0.1:8000/cases/count")
+    fetch(`${API_BASE_URL}/cases/count`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch case count");

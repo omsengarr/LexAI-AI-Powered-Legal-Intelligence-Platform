@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import { API_BASE_URL } from "../../services/api";
 import AnalyticsCard from "../../components/analytics/AnalyticsCard";
 import AnalyticsCharts from "../../components/analytics/AnalyticsCharts";
 
@@ -38,7 +39,7 @@ function AnalyticsPage() {
         // ----------------------------------------
 
         const documentResponse = await fetch(
-          "http://127.0.0.1:8000/documents/count"
+          `${API_BASE_URL}/documents/count`
         );
 
         if (!documentResponse.ok) {
@@ -54,7 +55,7 @@ function AnalyticsPage() {
         // ----------------------------------------
 
         const queryResponse = await fetch(
-          "http://127.0.0.1:8000/queries/count"
+          `${API_BASE_URL}/queries/count`
         );
 
         if (!queryResponse.ok) {
@@ -70,7 +71,7 @@ function AnalyticsPage() {
         // ----------------------------------------
 
         const caseResponse = await fetch(
-          "http://127.0.0.1:8000/cases/count"
+          `${API_BASE_URL}/cases/count`
         );
 
         if (!caseResponse.ok) {

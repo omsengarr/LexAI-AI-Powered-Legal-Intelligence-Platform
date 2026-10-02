@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../services/api";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -76,7 +77,7 @@ function CaseDetailsPage() {
         }
 
         const response = await fetch(
-          `http://127.0.0.1:8000/cases/${caseId}`
+          `${API_BASE_URL}/cases/${caseId}`
         );
 
         if (!response.ok) {
@@ -140,7 +141,7 @@ function CaseDetailsPage() {
       setDeleteError("");
 
       const response = await fetch(
-        `http://127.0.0.1:8000/cases/${caseId}`,
+        `${API_BASE_URL}/cases/${caseId}`,
         {
           method: "DELETE",
         }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../services/api";
 import { compareCases } from "../../services/api";
 import {
   ArrowLeftRight,
@@ -68,7 +69,7 @@ function JudgmentComparisonPage() {
         setError("");
 
         const response = await fetch(
-          "http://127.0.0.1:8000/cases"
+          `${API_BASE_URL}/cases`
         );
 
         if (!response.ok) {

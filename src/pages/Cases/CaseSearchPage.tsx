@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { API_BASE_URL } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -76,7 +77,7 @@ function CaseSearchPage() {
       setError("");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/cases"
+        `${API_BASE_URL}/cases`
       );
 
       if (!response.ok) {
@@ -176,13 +177,15 @@ function CaseSearchPage() {
         status
       );
 
-      const response = await fetch(
-        `http://127.0.0.1:8000/cases?${params.toString()}`,
-        {
-          method: "POST",
-        }
-      );
-
+ const response = await fetch(
+  `${API_BASE_URL}/cases?${params.toString()}`,
+  {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }
+);
       const data = await response.json();
 
       if (!response.ok) {
