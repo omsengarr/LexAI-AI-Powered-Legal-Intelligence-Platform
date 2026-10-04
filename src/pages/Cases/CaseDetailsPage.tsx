@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../services/api";
 import { useNavigate, useParams } from "react-router-dom";
@@ -45,20 +46,11 @@ function CaseDetailsPage() {
   // State
   // ========================================
 
-  const [legalCase, setLegalCase] =
-    useState<LegalCase | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  const [deleting, setDeleting] =
-    useState(false);
-
-  const [deleteError, setDeleteError] =
-    useState("");
+  const [legalCase, setLegalCase] = useState<LegalCase | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // ========================================
   // Load Case
@@ -71,9 +63,7 @@ function CaseDetailsPage() {
         setError("");
 
         if (!caseId) {
-          throw new Error(
-            "Case ID is missing."
-          );
+          throw new Error("Case ID is missing.");
         }
 
         const response = await fetch(
@@ -82,25 +72,16 @@ function CaseDetailsPage() {
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error(
-              "Case not found."
-            );
+            throw new Error("Case not found.");
           }
 
-          throw new Error(
-            "Failed to load case details."
-          );
+          throw new Error("Failed to load case details.");
         }
 
-        const data: LegalCase =
-          await response.json();
-
+        const data: LegalCase = await response.json();
         setLegalCase(data);
       } catch (error) {
-        console.error(
-          "Failed to fetch case:",
-          error
-        );
+        console.error("Failed to fetch case:", error);
 
         setError(
           error instanceof Error
@@ -121,10 +102,7 @@ function CaseDetailsPage() {
 
   const handleDeleteCase = async () => {
     if (!caseId) {
-      setDeleteError(
-        "Case ID is missing."
-      );
-
+      setDeleteError("Case ID is missing.");
       return;
     }
 
@@ -151,17 +129,13 @@ function CaseDetailsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail ||
-            "Failed to delete case."
+          data.detail || "Failed to delete case."
         );
       }
 
       navigate("/cases");
     } catch (error) {
-      console.error(
-        "Failed to delete case:",
-        error
-      );
+      console.error("Failed to delete case:", error);
 
       setDeleteError(
         error instanceof Error
@@ -177,11 +151,8 @@ function CaseDetailsPage() {
   // Status Helper
   // ========================================
 
-  const getStatusInfo = (
-    caseStatus: string | null
-  ) => {
-    const normalized =
-      caseStatus?.toLowerCase();
+  const getStatusInfo = (caseStatus: string | null) => {
+    const normalized = caseStatus?.toLowerCase();
 
     if (normalized === "closed") {
       return {
@@ -215,16 +186,13 @@ function CaseDetailsPage() {
 
   const formatDate = (date: string) => {
     try {
-      return new Date(date).toLocaleString(
-        "en-IN",
-        {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      );
+      return new Date(date).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } catch {
       return "Unknown date";
     }
@@ -239,7 +207,6 @@ function CaseDetailsPage() {
       <main className="relative min-h-full pb-8">
         <div className="pointer-events-none fixed inset-0 overflow-hidden">
           <div className="absolute -left-40 top-20 h-80 w-80 rounded-full bg-cyan-500/[0.06] blur-3xl" />
-
           <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-blue-500/[0.04] blur-3xl" />
         </div>
 
@@ -274,23 +241,19 @@ function CaseDetailsPage() {
       <main className="relative min-h-full space-y-8 pb-8">
         <div className="pointer-events-none fixed inset-0 overflow-hidden">
           <div className="absolute -left-40 top-20 h-80 w-80 rounded-full bg-cyan-500/[0.05] blur-3xl" />
-
           <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-red-500/[0.03] blur-3xl" />
         </div>
 
         <div className="relative z-10">
           <button
             type="button"
-            onClick={() =>
-              navigate("/cases")
-            }
+            onClick={() => navigate("/cases")}
             className="group inline-flex items-center gap-2 rounded-xl border border-white/[0.07] bg-slate-900/60 px-4 py-2.5 text-sm text-slate-400 backdrop-blur-xl transition hover:border-white/[0.12] hover:bg-slate-900 hover:text-white"
           >
             <ArrowLeft
               size={17}
               className="transition-transform group-hover:-translate-x-0.5"
             />
-
             Back to Case Search
           </button>
 
@@ -306,22 +269,16 @@ function CaseDetailsPage() {
                 </h1>
 
                 <p className="mt-1 text-sm leading-6 text-red-300/80">
-                  {error ||
-                    "Case not found."}
+                  {error || "Case not found."}
                 </p>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate("/cases")
-                  }
+                  onClick={() => navigate("/cases")}
                   className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white"
                 >
                   Return to Cases
-
-                  <ArrowUpRight
-                    size={14}
-                  />
+                  <ArrowUpRight size={14} />
                 </button>
               </div>
             </div>
@@ -335,10 +292,7 @@ function CaseDetailsPage() {
   // Status
   // ========================================
 
-  const statusInfo = getStatusInfo(
-    legalCase.status
-  );
-
+  const statusInfo = getStatusInfo(legalCase.status);
   const StatusIcon = statusInfo.icon;
 
   // ========================================
@@ -351,48 +305,34 @@ function CaseDetailsPage() {
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-40 top-20 h-80 w-80 rounded-full bg-cyan-500/[0.06] blur-3xl" />
-
         <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-blue-500/[0.04] blur-3xl" />
-
         <div className="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-purple-500/[0.025] blur-3xl" />
       </div>
 
       <div className="relative z-10 space-y-8">
-        {/* ========================================
-            Back Navigation
-        ======================================== */}
+        {/* Back Navigation */}
 
         <button
           type="button"
-          onClick={() =>
-            navigate("/cases")
-          }
+          onClick={() => navigate("/cases")}
           className="group inline-flex items-center gap-2 rounded-xl border border-white/[0.07] bg-slate-900/60 px-4 py-2.5 text-sm text-slate-400 backdrop-blur-xl transition hover:border-white/[0.12] hover:bg-slate-900 hover:text-white"
         >
           <ArrowLeft
             size={17}
             className="transition-transform group-hover:-translate-x-0.5"
           />
-
           Back to Case Search
         </button>
 
-        {/* ========================================
-            Case Hero
-        ======================================== */}
+        {/* Case Hero */}
 
         <section className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-slate-900/70 p-6 shadow-2xl shadow-black/15 backdrop-blur-xl sm:p-8">
-          {/* Glow */}
-
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-400/[0.06] blur-3xl" />
 
           <div className="relative">
-            {/* Badge Row */}
-
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/15 bg-cyan-400/[0.06] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-cyan-300">
                 <Scale size={13} />
-
                 {legalCase.case_number}
               </span>
 
@@ -400,16 +340,11 @@ function CaseDetailsPage() {
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium ${statusInfo.wrapper}`}
                 >
-                  <StatusIcon
-                    size={13}
-                  />
-
+                  <StatusIcon size={13} />
                   {legalCase.status}
                 </span>
               )}
             </div>
-
-            {/* Title */}
 
             <h1 className="mt-5 max-w-4xl text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
               {legalCase.title}
@@ -419,16 +354,10 @@ function CaseDetailsPage() {
               Case overview and legal information
             </p>
 
-            {/* Hero Metadata */}
-
             <div className="mt-7 flex flex-wrap gap-3">
               {legalCase.court && (
                 <div className="inline-flex items-center gap-2 rounded-xl border border-white/[0.06] bg-slate-950/50 px-4 py-2.5">
-                  <Building2
-                    size={15}
-                    className="text-cyan-400"
-                  />
-
+                  <Building2 size={15} className="text-cyan-400" />
                   <span className="text-xs text-slate-400">
                     {legalCase.court}
                   </span>
@@ -437,11 +366,7 @@ function CaseDetailsPage() {
 
               {legalCase.case_type && (
                 <div className="inline-flex items-center gap-2 rounded-xl border border-white/[0.06] bg-slate-950/50 px-4 py-2.5">
-                  <FileText
-                    size={15}
-                    className="text-cyan-400"
-                  />
-
+                  <FileText size={15} className="text-cyan-400" />
                   <span className="text-xs text-slate-400">
                     {legalCase.case_type}
                   </span>
@@ -449,103 +374,70 @@ function CaseDetailsPage() {
               )}
 
               <div className="inline-flex items-center gap-2 rounded-xl border border-white/[0.06] bg-slate-950/50 px-4 py-2.5">
-                <CalendarDays
-                  size={15}
-                  className="text-cyan-400"
-                />
-
+                <CalendarDays size={15} className="text-cyan-400" />
                 <span className="text-xs text-slate-400">
-                  {formatDate(
-                    legalCase.created_at
-                  )}
+                  {formatDate(legalCase.created_at)}
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ========================================
-            Overview Cards
-        ======================================== */}
+        {/* Overview Cards */}
 
         <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          {/* Court */}
-
           <div className="group rounded-3xl border border-white/[0.07] bg-slate-900/60 p-6 shadow-xl shadow-black/10 backdrop-blur-xl transition hover:border-cyan-400/15">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/[0.07] text-cyan-400">
                 <Building2 size={18} />
               </div>
-
               <span className="text-[10px] uppercase tracking-[0.18em] text-slate-600">
                 Court
               </span>
             </div>
 
-            <p className="mt-5 text-xs text-slate-500">
-              Jurisdiction
-            </p>
-
+            <p className="mt-5 text-xs text-slate-500">Jurisdiction</p>
             <p className="mt-1.5 text-base font-semibold leading-6 text-white">
-              {legalCase.court ||
-                "Not specified"}
+              {legalCase.court || "Not specified"}
             </p>
           </div>
-
-          {/* Case Type */}
 
           <div className="group rounded-3xl border border-white/[0.07] bg-slate-900/60 p-6 shadow-xl shadow-black/10 backdrop-blur-xl transition hover:border-cyan-400/15">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/[0.07] text-cyan-400">
                 <FileText size={18} />
               </div>
-
               <span className="text-[10px] uppercase tracking-[0.18em] text-slate-600">
                 Type
               </span>
             </div>
 
-            <p className="mt-5 text-xs text-slate-500">
-              Classification
-            </p>
-
+            <p className="mt-5 text-xs text-slate-500">Classification</p>
             <p className="mt-1.5 text-base font-semibold leading-6 text-white">
-              {legalCase.case_type ||
-                "Not specified"}
+              {legalCase.case_type || "Not specified"}
             </p>
           </div>
-
-          {/* Status */}
 
           <div className="group rounded-3xl border border-white/[0.07] bg-slate-900/60 p-6 shadow-xl shadow-black/10 backdrop-blur-xl transition hover:border-cyan-400/15">
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/[0.07] text-cyan-400">
                 <StatusIcon size={18} />
               </div>
-
               <span className="text-[10px] uppercase tracking-[0.18em] text-slate-600">
                 Status
               </span>
             </div>
 
-            <p className="mt-5 text-xs text-slate-500">
-              Current State
-            </p>
-
+            <p className="mt-5 text-xs text-slate-500">Current State</p>
             <p className="mt-1.5 text-base font-semibold leading-6 text-white">
-              {legalCase.status ||
-                "Not specified"}
+              {legalCase.status || "Not specified"}
             </p>
           </div>
         </section>
 
-        {/* ========================================
-            Main Content
-        ======================================== */}
+        {/* Main Content */}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          {/* Description */}
-
           <section className="rounded-3xl border border-white/[0.07] bg-slate-900/60 p-6 shadow-xl shadow-black/10 backdrop-blur-xl sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/[0.07] text-cyan-400">
@@ -556,7 +448,6 @@ function CaseDetailsPage() {
                 <h2 className="text-lg font-semibold text-white">
                   Case Description
                 </h2>
-
                 <p className="mt-0.5 text-xs text-slate-600">
                   Overview provided for this case
                 </p>
@@ -571,15 +462,12 @@ function CaseDetailsPage() {
               ) : (
                 <div className="rounded-2xl border border-dashed border-white/[0.08] bg-slate-950/30 p-6 text-center">
                   <p className="text-sm text-slate-500">
-                    No description available
-                    for this case.
+                    No description available for this case.
                   </p>
                 </div>
               )}
             </div>
           </section>
-
-          {/* Case Metadata */}
 
           <section className="rounded-3xl border border-white/[0.07] bg-slate-900/60 p-6 shadow-xl shadow-black/10 backdrop-blur-xl">
             <div className="flex items-center gap-3">
@@ -591,7 +479,6 @@ function CaseDetailsPage() {
                 <h2 className="text-lg font-semibold text-white">
                   Case Information
                 </h2>
-
                 <p className="mt-0.5 text-xs text-slate-600">
                   Record metadata
                 </p>
@@ -599,63 +486,38 @@ function CaseDetailsPage() {
             </div>
 
             <div className="mt-6 divide-y divide-white/[0.06]">
-              {/* Case ID */}
-
               <div className="flex items-center justify-between gap-4 py-4">
-                <span className="text-xs text-slate-500">
-                  Case ID
-                </span>
-
+                <span className="text-xs text-slate-500">Case ID</span>
                 <span className="text-right text-sm font-medium text-slate-300">
                   {legalCase.id}
                 </span>
               </div>
 
-              {/* Case Number */}
-
               <div className="flex items-center justify-between gap-4 py-4">
-                <span className="text-xs text-slate-500">
-                  Case Number
-                </span>
-
+                <span className="text-xs text-slate-500">Case Number</span>
                 <span className="max-w-[190px] text-right text-sm font-medium text-slate-300">
                   {legalCase.case_number}
                 </span>
               </div>
 
-              {/* Status */}
-
               <div className="flex items-center justify-between gap-4 py-4">
-                <span className="text-xs text-slate-500">
-                  Status
-                </span>
-
+                <span className="text-xs text-slate-500">Status</span>
                 <span className="text-right text-sm font-medium text-slate-300">
-                  {legalCase.status ||
-                    "Not specified"}
+                  {legalCase.status || "Not specified"}
                 </span>
               </div>
 
-              {/* Created */}
-
               <div className="flex items-start justify-between gap-4 py-4">
-                <span className="text-xs text-slate-500">
-                  Created
-                </span>
-
+                <span className="text-xs text-slate-500">Created</span>
                 <span className="max-w-[190px] text-right text-sm font-medium leading-5 text-slate-300">
-                  {formatDate(
-                    legalCase.created_at
-                  )}
+                  {formatDate(legalCase.created_at)}
                 </span>
               </div>
             </div>
           </section>
         </div>
 
-        {/* ========================================
-            Delete Error
-        ======================================== */}
+        {/* Delete Error */}
 
         {deleteError && (
           <section className="rounded-3xl border border-red-400/20 bg-red-400/[0.05] p-5 shadow-xl shadow-black/10">
@@ -669,7 +531,6 @@ function CaseDetailsPage() {
                 <p className="text-sm font-medium text-red-300">
                   Unable to delete case
                 </p>
-
                 <p className="mt-1 text-xs leading-5 text-red-300/70">
                   {deleteError}
                 </p>
@@ -678,9 +539,7 @@ function CaseDetailsPage() {
           </section>
         )}
 
-        {/* ========================================
-            Danger Zone
-        ======================================== */}
+        {/* Danger Zone */}
 
         <section className="overflow-hidden rounded-3xl border border-red-400/15 bg-slate-900/60 shadow-xl shadow-black/10 backdrop-blur-xl">
           <div className="border-b border-red-400/10 bg-red-400/[0.025] px-6 py-5 sm:px-8">
@@ -693,7 +552,6 @@ function CaseDetailsPage() {
                 <h2 className="text-base font-semibold text-white">
                   Danger Zone
                 </h2>
-
                 <p className="mt-0.5 text-xs text-slate-500">
                   Destructive case management actions
                 </p>
@@ -706,11 +564,9 @@ function CaseDetailsPage() {
               <p className="text-sm font-medium text-slate-300">
                 Delete this case
               </p>
-
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                Permanently remove this case from
-                the LexAI database. This action
-                cannot be undone.
+                Permanently remove this case from the LexAI database. This
+                action cannot be undone.
               </p>
             </div>
 
@@ -726,13 +582,11 @@ function CaseDetailsPage() {
                     size={17}
                     className="animate-spin"
                   />
-
                   Deleting...
                 </>
               ) : (
                 <>
                   <Trash2 size={17} />
-
                   Delete Case
                 </>
               )}

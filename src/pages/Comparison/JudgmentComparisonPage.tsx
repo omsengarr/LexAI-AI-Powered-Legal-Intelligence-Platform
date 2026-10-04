@@ -68,9 +68,7 @@ function JudgmentComparisonPage() {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          `${API_BASE_URL}/cases`
-        );
+        const response = await fetch(`${API_BASE_URL}/cases`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch cases");

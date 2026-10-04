@@ -76,9 +76,7 @@ function CaseSearchPage() {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
-        `${API_BASE_URL}/cases`
-      );
+ const response = await fetch( `${API_BASE_URL}/cases` );
 
       if (!response.ok) {
         throw new Error("Failed to load cases.");
@@ -177,15 +175,16 @@ function CaseSearchPage() {
         status
       );
 
- const response = await fetch(
-  `${API_BASE_URL}/cases?${params.toString()}`,
-  {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  }
-);
+      const response = await fetch(
+        `${API_BASE_URL}/cases?${params.toString()}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       const data = await response.json();
 
       if (!response.ok) {

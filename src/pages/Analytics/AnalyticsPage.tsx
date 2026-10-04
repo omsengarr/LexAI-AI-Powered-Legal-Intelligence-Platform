@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 
 import {
@@ -47,7 +48,6 @@ function AnalyticsPage() {
         }
 
         const documentData = await documentResponse.json();
-
         setDocumentCount(documentData.count);
 
         // ----------------------------------------
@@ -63,7 +63,6 @@ function AnalyticsPage() {
         }
 
         const queryData = await queryResponse.json();
-
         setAIQueryCount(queryData.count);
 
         // ----------------------------------------
@@ -79,7 +78,6 @@ function AnalyticsPage() {
         }
 
         const caseData = await caseResponse.json();
-
         setCaseCount(caseData.count);
       } catch (error) {
         console.error("Failed to fetch analytics data:", error);
@@ -167,6 +165,7 @@ function AnalyticsPage() {
             </div>
 
             {/* System status */}
+
             <div className="flex w-fit items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
                 <Server className="h-5 w-5 text-emerald-300" />
