@@ -1,3 +1,4 @@
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "http://127.0.0.1:8001";
@@ -329,6 +330,78 @@ export async function sendChatMessage(
   return response.json();
 }
 
+// ========================================
+// Document Chat With Citation Metadata
+// ========================================
+
+export interface DocumentChatSource {
+  chunk_id: number;
+  page_number: number;
+  chunk_number: number;
+}
+
+export interface DocumentChatResponse {
+  message: string;
+  document_id: number;
+  question: string;
+  locked_pages: number[];
+  answer: string;
+  sources: DocumentChatSource[];
+}
+
+// ========================================
+// Ask a Question About an Uploaded Document
+// ========================================
+
+export async function askDocumentQuestion(
+  documentId: number,
+  message: string,
+  lockedPages: number[] = []
+): Promise<DocumentChatResponse> {
+  if (!message.trim()) {
+    throw new Error(
+      "Please enter a question about the document."
+    );
+  }
+
+  const params = new URLSearchParams();
+
+  if (lockedPages.length > 0) {
+    params.set(
+      "locked_pages",
+      lockedPages.join(",")
+    );
+  }
+
+  const queryString = params.toString();
+
+  const url =
+    `${API_BASE_URL}/documents/${documentId}/ask` +
+    (queryString ? `?${queryString}` : "");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: message.trim(),
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const detail =
+      typeof data?.detail === "string"
+        ? data.detail
+        : "Failed to answer the question about this document.";
+
+    throw new Error(detail);
+  }
+
+  return data as DocumentChatResponse;
+}
 
 // ========================================
 // Login
@@ -363,6 +436,10 @@ export async function loginUser(
   return data;
 }
 
+// ========================================
+// AI Compliance Analysis
+// ========================================
+
 export async function analyzeDocumentCompliance(
   documentId: number,
   regulation: string,
@@ -386,7 +463,8 @@ export async function analyzeDocumentCompliance(
 
   if (!response.ok) {
     throw new Error(
-      data?.detail || "Failed to analyze document compliance."
+      data?.detail ||
+        "Failed to analyze document compliance."
     );
   }
 

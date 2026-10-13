@@ -39,14 +39,6 @@ function LoginPage() {
       return;
     }
 
-    // Only Gmail addresses are allowed
-    const gmailRegex = /^[^\s@]+@gmail\.com$/i;
-
-    if (!gmailRegex.test(trimmedEmail)) {
-      setError("Please enter a valid Gmail address ending with @gmail.com.");
-      return;
-    }
-
     // ========================================
     // Validate Password
     // ========================================
@@ -129,15 +121,15 @@ function LoginPage() {
         {/* Email */}
 
         <Input
-          label="Email Address"
-          type="email"
-          placeholder="Enter your Gmail address"
-          required
-          value={email}
-          onChange={(event) =>
-            setEmail(event.target.value)
-          }
-        />
+  label="Email Address"
+  type="text"
+  placeholder="Enter any email address or username"
+  required
+  value={email}
+  onChange={(event) =>
+    setEmail(event.target.value)
+  }
+/>
 
         {/* Password */}
 
