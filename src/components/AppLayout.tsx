@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+
+import { useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
 import Sidebar from "./dashboard/Sidebar";
@@ -12,6 +13,8 @@ function AppLayout({ children }: AppLayoutProps) {
   const { pathname } = useLocation();
   const isChatPage = pathname === "/chat";
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div
       className={`min-h-screen ${
@@ -20,15 +23,22 @@ function AppLayout({ children }: AppLayoutProps) {
           : "bg-slate-950"
       }`}
     >
-      {/* Existing website navigation — unchanged */}
-      <Sidebar />
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() =>
+          setSidebarCollapsed((previous) => !previous)
+        }
+      />
 
-      {/* Main application area */}
-      <div className="min-h-screen md:ml-72">
-        {/* Existing topbar — unchanged */}
+      <div
+        className={`min-h-screen transition-[margin] duration-300 ${
+          sidebarCollapsed
+            ? "md:ml-[76px]"
+            : "md:ml-[270px]"
+        }`}
+      >
         <Topbar />
 
-        {/* Page content */}
         <main
           className={
             isChatPage
