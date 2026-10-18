@@ -10,6 +10,8 @@ import {
   Bot,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Folder,
   FolderPlus,
   FolderSearch,
@@ -127,6 +129,8 @@ function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // Independent collapse state for the AI chat history panel.
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -682,17 +686,58 @@ function ChatPage() {
   );
 
   const renderSidebar = () => (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <aside
+      className={`flex h-full shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 dark:border-slate-800 dark:bg-slate-950 ${
+        historyCollapsed ? "w-12" : "w-[240px]"
+      }`}
+    >
+      {historyCollapsed ? (
+        <div className="flex flex-col items-center gap-3 p-2">
+          <button
+            type="button"
+            onClick={() => setHistoryCollapsed(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+            aria-label="Expand chat history"
+            title="Expand chat history"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setHistoryCollapsed(false);
+              startNewChat();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-900"
+            aria-label="New chat"
+            title="New chat"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <>
       <div className="p-2.5">
-        <button
-          type="button"
-          onClick={() => startNewChat()}
-          className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900"
-        >
-          <MessageSquarePlus className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-          <span>New Chat</span>
-          <Plus className="ml-auto h-4 w-4 text-slate-400" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => startNewChat()}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900"
+          >
+            <MessageSquarePlus className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <span className="truncate">New Chat</span>
+            <Plus className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryCollapsed(true)}
+            className="flex h-9 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200"
+            aria-label="Collapse chat history"
+            title="Collapse chat history"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        </div>
 
         <label className="mt-2 flex items-center gap-2 rounded-lg bg-slate-100 px-2.5 py-2 dark:bg-slate-900">
           <Search className="h-4 w-4 shrink-0 text-slate-500" />
@@ -888,6 +933,8 @@ function ChatPage() {
           <span className="truncate">LexAI Legal Assistant</span>
         </div>
       </div>
+        </>
+      )}
     </aside>
   );
 
