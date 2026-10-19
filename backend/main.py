@@ -12,7 +12,8 @@ from datetime import datetime
 import re
 import requests
 from dotenv import load_dotenv
-
+from case_search import router as case_search_router, LegalCase
+from database import Base, engine
 
 
 # ========================================
@@ -72,6 +73,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.include_router(case_search_router)
+
+Base.metadata.create_all(bind=engine)
 
 # ========================================
 # CORS Configuration

@@ -36,6 +36,22 @@ interface LegalCase {
 }
 
 // ========================================
+// Legal Judgment Search Result Interface
+// ========================================
+
+interface JudgmentResult {
+  id: number;
+  title: string;
+  court: string | null;
+  case_number: string | null;
+  citation: string | null;
+  decision_date: string | null;
+  topic: string | null;
+  summary: string | null;
+  source_url: string | null;
+}
+
+// ========================================
 // Case Search Page
 // ========================================
 
@@ -66,6 +82,16 @@ function CaseSearchPage() {
   const [caseType, setCaseType] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Active");
+
+  // ========================================
+  // Legal Judgment Search State
+  // ========================================
+
+  const [judgments, setJudgments] = useState<JudgmentResult[]>([]);
+  const [judgmentQuery, setJudgmentQuery] = useState("");
+  const [judgmentLoading, setJudgmentLoading] = useState(false);
+  const [judgmentError, setJudgmentError] = useState("");
+  const [hasSearchedJudgments, setHasSearchedJudgments] = useState(false);
 
   // ========================================
   // Load Cases
@@ -229,6 +255,73 @@ function CaseSearchPage() {
       );
     } finally {
       setCreating(false);
+    }
+  };
+
+  // ========================================
+  // Search Legal Judgments
+  // ========================================
+
+  const searchLegalJudgments = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!judgmentQuery.trim()) {
+      setJudgmentError("Enter a search term.");
+      setJudgments([]);
+      setHasSearchedJudgments(true);
+      return;
+    }
+
+    setJudgmentLoading(true);
+    setJudgmentError("");
+    setHasSearchedJudgments(true);
+
+    try {
+      const params = new URLSearchParams({
+        q: judgmentQuery.trim(),
+        limit: "20",
+      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/cases/search?${params.toString()}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.detail === "string"
+            ? data.detail
+            : "Failed to search legal judgments."
+        );
+      }
+
+      // Support either a direct array or common wrapped API responses.
+      const results: unknown = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data?.cases)
+            ? data.cases
+            : null;
+
+      if (!Array.isArray(results)) {
+        throw new Error(
+          "Unexpected response format from the legal judgment search API."
+        );
+      }
+
+      setJudgments(results as JudgmentResult[]);
+    } catch (error) {
+      console.error("Legal judgment search failed:", error);
+      setJudgments([]);
+      setJudgmentError(
+        error instanceof Error
+          ? error.message
+          : "Unable to search legal judgments."
+      );
+    } finally {
+      setJudgmentLoading(false);
     }
   };
 
@@ -774,6 +867,166 @@ function CaseSearchPage() {
               </button>
             )}
           </div>
+        </section>
+
+        {/* ========================================
+            Legal Judgment Search
+        ======================================== */}
+
+        <section className="rounded-3xl border border-cyan-400/10 bg-slate-900/70 p-5 shadow-xl shadow-black/10 backdrop-blur-xl sm:p-6">
+          <div className="mb-5">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-cyan-400/15 bg-cyan-400/[0.06] px-3 py-1.5 text-xs font-medium text-cyan-300">
+              <Scale size={14} />
+              Legal Research
+            </div>
+
+            <h2 className="text-lg font-semibold text-white">
+              Legal Judgment Search
+            </h2>
+
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Search the legal judgments indexed in the LexAI database.
+              This search is separate from your personal case workspace.
+            </p>
+          </div>
+
+          <form
+            onSubmit={searchLegalJudgments}
+            className="flex flex-col gap-3 sm:flex-row"
+          >
+            <input
+              type="text"
+              value={judgmentQuery}
+              onChange={(event) => setJudgmentQuery(event.target.value)}
+              placeholder="Try constitution, contract law, or privacy..."
+              aria-label="Search legal judgments"
+              className="min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-slate-950/70 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/5"
+            />
+
+            <button
+              type="submit"
+              disabled={judgmentLoading || !judgmentQuery.trim()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {judgmentLoading ? (
+                <Loader2 size={17} className="animate-spin" />
+              ) : (
+                <Search size={17} />
+              )}
+              {judgmentLoading ? "Searching..." : "Search Judgments"}
+            </button>
+          </form>
+
+          {judgmentError && (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.06] p-4">
+              <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" />
+              <p className="text-sm leading-6 text-red-300">
+                {judgmentError}
+              </p>
+            </div>
+          )}
+
+          {judgmentLoading && (
+            <div className="mt-5 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-slate-950/40 p-5 text-sm text-slate-400">
+              <Loader2 size={18} className="animate-spin text-cyan-400" />
+              Searching indexed legal judgments...
+            </div>
+          )}
+
+          {!judgmentLoading &&
+            !judgmentError &&
+            hasSearchedJudgments &&
+            judgments.length === 0 && (
+              <div className="mt-5 rounded-xl border border-white/[0.06] bg-slate-950/40 p-6 text-center">
+                <Search size={22} className="mx-auto text-slate-500" />
+                <p className="mt-3 text-sm font-medium text-white">
+                  No matching judgments found
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Try another search term. Results depend on the records
+                  currently indexed in your database.
+                </p>
+              </div>
+            )}
+
+          {hasSearchedJudgments && judgments.length > 0 && (
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-white">
+                Judgment Results
+              </p>
+              <span className="text-xs text-slate-500">
+                {judgments.length} {judgments.length === 1 ? "result" : "results"}
+              </span>
+            </div>
+          )}
+
+          <div className="mt-4 space-y-4">
+            {judgments.map((judgment) => (
+              <article
+                key={judgment.id}
+                className="rounded-2xl border border-white/[0.07] bg-slate-950/50 p-5 transition hover:border-cyan-400/20 sm:p-6"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <h3 className="text-base font-semibold leading-6 text-white">
+                    {judgment.title}
+                  </h3>
+
+                  {judgment.topic && (
+                    <span className="w-fit shrink-0 rounded-full border border-cyan-400/15 bg-cyan-400/[0.06] px-3 py-1 text-[11px] font-medium text-cyan-300">
+                      {judgment.topic}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs text-slate-400">
+                  {judgment.court && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Building2 size={13} className="text-slate-500" />
+                      {judgment.court}
+                    </span>
+                  )}
+
+                  {judgment.case_number && (
+                    <span>Case No.: {judgment.case_number}</span>
+                  )}
+
+                  {judgment.citation && (
+                    <span>Citation: {judgment.citation}</span>
+                  )}
+
+                  {judgment.decision_date && (
+                    <span>
+                      Date: {judgment.decision_date}
+                    </span>
+                  )}
+                </div>
+
+                {judgment.summary && (
+                  <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-400">
+                    {judgment.summary}
+                  </p>
+                )}
+
+                {judgment.source_url && (
+                  <a
+                    href={judgment.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex items-center gap-2 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.05] px-3 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+                  >
+                    Open source
+                    <ArrowUpRight size={14} />
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-5 text-xs leading-5 text-slate-600">
+            Search results reflect records stored in your LexAI database.
+            Verify judgments and citations against the linked official source
+            before relying on them for legal work.
+          </p>
         </section>
 
         {/* ========================================
