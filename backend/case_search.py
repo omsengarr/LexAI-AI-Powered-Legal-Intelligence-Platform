@@ -1,8 +1,8 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Column, Integer, String, Text, or_
 from sqlalchemy.orm import Session
 
@@ -28,6 +28,8 @@ class LegalCase(Base):
 
 
 class CaseResult(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     court: Optional[str] = None
@@ -38,8 +40,11 @@ class CaseResult(BaseModel):
     summary: Optional[str] = None
     source_url: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+
+class CaseDetailResult(CaseResult):
+    """Detailed response for the in-app judgment viewer."""
+
+    judgment_text: Optional[str] = None
 
 
 def get_db():
@@ -73,25 +78,38 @@ def search_cases(
             )
         )
 
-    if court:
-        query = query.filter(LegalCase.court.ilike(f"%{court.strip()}%"))
+    if court and court.strip():
+        query = query.filter(
+            LegalCase.court.ilike(f"%{court.strip()}%")
+        )
 
-    if topic:
-        query = query.filter(LegalCase.topic.ilike(f"%{topic.strip()}%"))
+    if topic and topic.strip():
+        query = query.filter(
+            LegalCase.topic.ilike(f"%{topic.strip()}%")
+        )
 
-    return query.order_by(LegalCase.id.desc()).limit(limit).all()
+    return (
+        query.order_by(LegalCase.id.desc())
+        .limit(limit)
+        .all()
+    )
 
 
-@router.get("/{case_id}", response_model=CaseResult)
+@router.get("/{case_id}", response_model=CaseDetailResult)
 def get_case(
     case_id: int,
     db: Session = Depends(get_db),
 ):
-    from fastapi import HTTPException
-
-    case = db.query(LegalCase).filter(LegalCase.id == case_id).first()
+    case = (
+        db.query(LegalCase)
+        .filter(LegalCase.id == case_id)
+        .first()
+    )
 
     if case is None:
-        raise HTTPException(status_code=404, detail="Case not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Judgment not found",
+        )
 
     return case
