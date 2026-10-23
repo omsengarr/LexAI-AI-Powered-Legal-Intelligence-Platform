@@ -504,3 +504,35 @@ export async function compareCases(
 
   return data;
 }
+
+
+export interface LegalJudgment {
+  id: number;
+  title: string;
+  court?: string | null;
+  case_number?: string | null;
+  citation?: string | null;
+  decision_date?: string | null;
+  topic?: string | null;
+  summary?: string | null;
+  source_url?: string | null;
+  judgment_text?: string | null;
+}
+
+export async function getLegalJudgment(
+  judgmentId: number
+): Promise<LegalJudgment> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/cases/${judgmentId}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.detail || "Failed to load judgment details."
+    );
+  }
+
+  return data as LegalJudgment;
+}
