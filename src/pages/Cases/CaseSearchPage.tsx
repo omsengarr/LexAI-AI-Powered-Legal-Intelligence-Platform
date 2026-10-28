@@ -54,6 +54,17 @@ interface JudgmentResult {
 }
 
 // ========================================
+// Official Court Source Interface
+// ========================================
+
+interface OfficialJudgmentSource {
+  name: string;
+  url: string;
+  description: string;
+  search_query: string;
+}
+
+// ========================================
 // Case Search Page
 // ========================================
 
@@ -94,6 +105,16 @@ function CaseSearchPage() {
   const [judgmentLoading, setJudgmentLoading] = useState(false);
   const [judgmentError, setJudgmentError] = useState("");
   const [hasSearchedJudgments, setHasSearchedJudgments] = useState(false);
+
+  // ========================================
+  // Official Court Sources State
+  // ========================================
+
+  const [officialSources, setOfficialSources] = useState<
+    OfficialJudgmentSource[]
+  >([]);
+  const [officialSourcesLoading, setOfficialSourcesLoading] = useState(false);
+  const [officialSourcesError, setOfficialSourcesError] = useState("");
 
   // ========================================
   // Legal Judgment Details State
@@ -229,6 +250,48 @@ function CaseSearchPage() {
   };
 
   // ========================================
+  // Load Official Court Sources
+  // ========================================
+
+  const fetchOfficialSources = async (query: string) => {
+    setOfficialSourcesLoading(true);
+    setOfficialSourcesError("");
+
+    try {
+      const params = new URLSearchParams({ q: query.trim() });
+      const response = await fetch(
+        `${API_BASE_URL}/api/cases/official-sources?${params.toString()}`
+      );
+      const data: unknown = await response.json();
+
+      if (!response.ok) {
+        const errorData = data as { detail?: unknown };
+        throw new Error(
+          typeof errorData?.detail === "string"
+            ? errorData.detail
+            : "Failed to load official court sources."
+        );
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error("Unexpected official sources response format.");
+      }
+
+      setOfficialSources(data as OfficialJudgmentSource[]);
+    } catch (error) {
+      console.error("Failed to load official court sources:", error);
+      setOfficialSources([]);
+      setOfficialSourcesError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load official court sources."
+      );
+    } finally {
+      setOfficialSourcesLoading(false);
+    }
+  };
+
+  // ========================================
   // Search Legal Judgments
   // ========================================
 
@@ -245,6 +308,7 @@ function CaseSearchPage() {
     setJudgmentLoading(true);
     setJudgmentError("");
     setHasSearchedJudgments(true);
+    void fetchOfficialSources(judgmentQuery);
 
     try {
       const params = new URLSearchParams({
@@ -849,6 +913,102 @@ function CaseSearchPage() {
             Search results reflect records stored in your LexAI database.
             Verify judgments and citations against the linked official source
             before relying on them for legal work.
+          </p>
+        </section>
+
+        {/* Official Court Sources */}
+
+        <section className="rounded-3xl border border-white/[0.07] bg-slate-900/60 p-5 shadow-xl shadow-black/10 backdrop-blur-xl sm:p-6">
+          <div className="mb-5">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-300">
+              <Building2 size={14} />
+              Authoritative Research
+            </div>
+            <h2 className="text-lg font-semibold text-white">
+              Official Court Sources
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Open official court portals to search for judgments and verify
+              case details. These links lead to external search portals; they
+              are not themselves retrieved judgments.
+            </p>
+          </div>
+
+          {officialSourcesLoading && (
+            <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-slate-950/40 p-4 text-sm text-slate-400">
+              <Loader2 size={18} className="animate-spin text-cyan-400" />
+              Loading official court sources...
+            </div>
+          )}
+
+          {officialSourcesError && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.06] p-4">
+              <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" />
+              <div>
+                <p className="text-sm text-red-300">{officialSourcesError}</p>
+                <button
+                  type="button"
+                  onClick={() => void fetchOfficialSources(judgmentQuery)}
+                  className="mt-3 rounded-lg border border-white/[0.08] px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!officialSourcesLoading &&
+            !officialSourcesError &&
+            officialSources.length === 0 && (
+              <div className="rounded-xl border border-white/[0.06] bg-slate-950/40 p-4">
+                <p className="text-sm text-slate-400">
+                  Search for a legal judgment above to load official court
+                  portal links.
+                </p>
+              </div>
+            )}
+
+          <div className="space-y-3">
+            {officialSources.map((source) => (
+              <article
+                key={source.url}
+                className="rounded-2xl border border-white/[0.07] bg-slate-950/50 p-4 sm:p-5"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] text-cyan-300">
+                    <Building2 size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold leading-6 text-white">
+                      {source.name}
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">
+                      {source.description}
+                    </p>
+                    {source.search_query && (
+                      <p className="mt-2 text-xs text-slate-500">
+                        Your search term: {source.search_query}
+                      </p>
+                    )}
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-4 py-2.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400/15"
+                    >
+                      Open Court Portal
+                      <ArrowUpRight size={14} />
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-4 text-xs leading-5 text-slate-600">
+            Search results, access requirements, and coverage are controlled by
+            each external portal. Verify the actual judgment and citation on the
+            court website before relying on them.
           </p>
         </section>
 

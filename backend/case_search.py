@@ -47,6 +47,13 @@ class CaseDetailResult(CaseResult):
     judgment_text: Optional[str] = None
 
 
+class OfficialSourceResult(BaseModel):
+    name: str
+    url: str
+    description: str
+    search_query: str
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -64,6 +71,10 @@ def search_cases(
     db: Session = Depends(get_db),
 ):
     query = db.query(LegalCase)
+
+    # Never display records explicitly marked as demo data
+    # in the regular legal judgment search results.
+    query = query.filter(~LegalCase.title.ilike("DEMO%"))
 
     if q.strip():
         term = f"%{q.strip()}%"
@@ -88,11 +99,49 @@ def search_cases(
             LegalCase.topic.ilike(f"%{topic.strip()}%")
         )
 
-    return (
-        query.order_by(LegalCase.id.desc())
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(LegalCase.id.desc()).limit(limit).all()
+
+
+@router.get("/official-sources", response_model=list[OfficialSourceResult])
+def get_official_judgment_sources(
+    q: str = Query(default="", max_length=200),
+):
+    """
+    Return official judgment-search portals.
+
+    These are links to the portals, not retrieved judgments.
+    The user must search on the destination website.
+    """
+    search_query = q.strip()
+
+    return [
+        OfficialSourceResult(
+            name="Supreme Court of India — Judgments and Orders",
+            url="https://verdictfinder.sci.gov.in/elk_frontend/index.php",
+            description=(
+                "Official Supreme Court judgment and order search. "
+                "The portal may require CAPTCHA verification."
+            ),
+            search_query=search_query,
+        ),
+        OfficialSourceResult(
+            name="Supreme Court Reports — Judgment Search",
+            url="https://scr.sci.gov.in/scrsearch/",
+            description=(
+                "Official Supreme Court Reports search portal."
+            ),
+            search_query=search_query,
+        ),
+        OfficialSourceResult(
+            name="e-Courts — Judgment Search",
+            url="https://judgments.ecourts.gov.in/",
+            description=(
+                "Official e-Courts judgment-search portal. "
+                "Search availability and coverage depend on the portal."
+            ),
+            search_query=search_query,
+        ),
+    ]
 
 
 @router.get("/{case_id}", response_model=CaseDetailResult)
